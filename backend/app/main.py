@@ -13,7 +13,11 @@ from app.cube import Cube, generate_scramble, parse_moves, validate_stickers
 from app.metrics import MetricsRegistry
 from app.replay import build_replay_package
 from app.solvers import KociembaSolver, RLSolver
-from app.storage import ReplayPackageError, ReplaySessionStore
+from app.storage import (
+    ReplayPackageError,
+    ReplayStoreError,
+    create_session_store_from_environment,
+)
 
 app = FastAPI(title="Rubic RFL API", version="0.1.0")
 app.add_middleware(
@@ -29,7 +33,7 @@ app.add_middleware(
 )
 solver = KociembaSolver()
 rl_solver = RLSolver.from_environment()
-session_store = ReplaySessionStore.from_environment()
+session_store = create_session_store_from_environment()
 metrics = MetricsRegistry()
 
 PROMETHEUS_MEDIA_TYPE = "text/plain; version=0.0.4; charset=utf-8"
@@ -97,7 +101,7 @@ def _store_replay_package(package: dict[str, Any]) -> dict[str, Any]:
         return session_store.save(package)
     except ReplayPackageError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-    except OSError as error:
+    except (OSError, ReplayStoreError) as error:
         raise HTTPException(
             status_code=500,
             detail=f"Replay package could not be stored: {error}",
@@ -107,8 +111,14 @@ def _store_replay_package(package: dict[str, Any]) -> dict[str, Any]:
 def _try_store_replay_package(package: dict[str, Any]) -> dict[str, Any] | None:
     try:
         return session_store.save(package)
-    except (OSError, ReplayPackageError):
+    except (OSError, ReplayPackageError, ReplayStoreError):
         return None
+
+
+def _storage_info() -> dict[str, Any]:
+    if hasattr(session_store, "storage_info"):
+        return session_store.storage_info()
+    return {"backend": "unknown"}
 
 
 def _decision_steps_by_number(details: object) -> dict[int, dict[str, Any]]:
@@ -232,11 +242,14 @@ def list_sessions(
     solver: str | None = None,
     status: str | None = None,
 ) -> dict[str, Any]:
-    sessions = session_store.list(limit=limit, solver=solver, status=status)
+    try:
+        sessions = session_store.list(limit=limit, solver=solver, status=status)
+    except ReplayStoreError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
     return {
         "sessions": sessions,
         "count": len(sessions),
-        "storage": {"backend": "json-files"},
+        "storage": _storage_info(),
     }
 
 
@@ -246,6 +259,8 @@ def get_session(session_id: str) -> dict[str, Any]:
         return session_store.get(session_id)
     except KeyError as error:
         raise HTTPException(status_code=404, detail="Session not found") from error
+    except ReplayStoreError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
 
 
 @app.get("/analytics/solves")
@@ -254,9 +269,12 @@ def solve_analytics(
     solver: str | None = None,
     status: str | None = None,
 ) -> dict[str, Any]:
-    sessions = session_store.list(limit=limit, solver=solver, status=status)
+    try:
+        sessions = session_store.list(limit=limit, solver=solver, status=status)
+    except ReplayStoreError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
     return {
-        "storage": {"backend": "json-files"},
+        "storage": _storage_info(),
         "filters": {"limit": limit, "solver": solver, "status": status},
         **build_solve_analytics(sessions),
     }
@@ -272,7 +290,10 @@ def save_session(payload: dict[str, Any]) -> dict[str, Any]:
 
 @app.delete("/sessions/{session_id}")
 def delete_session(session_id: str) -> dict[str, Any]:
-    deleted = session_store.delete(session_id)
+    try:
+        deleted = session_store.delete(session_id)
+    except ReplayStoreError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
     if not deleted:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"deleted": True, "session_id": session_id}

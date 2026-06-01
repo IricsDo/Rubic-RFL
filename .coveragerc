@@ -1,0 +1,21 @@
+[run]
+branch = True
+omit =
+    */tests/*
+    */__pycache__/*
+    */.venv/*
+
+[report]
+precision = 2
+show_missing = True
+skip_empty = True
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    if __name__ == .__main__.:
+
+[xml]
+output = reports/coverage.xml
+
+[json]
+output = reports/coverage.json

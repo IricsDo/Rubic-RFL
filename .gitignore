@@ -45,11 +45,22 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+coverage.json
 *.cover
 *.py,cover
 .hypothesis/
 .pytest_cache/
+pytest-cache-files-*/
+backend/pytest-cache-files-*/
 cover/
+reports/htmlcov/
+reports/.coverage
+reports/coverage.xml
+reports/coverage.json
+reports/*-smoke.json
+.tmp/
+rl/.tmp/
+replays/sessions/
 
 # Translations
 *.mo
@@ -169,6 +180,11 @@ cython_debug/
 
 # Ruff stuff:
 .ruff_cache/
+
+# Node / Playwright
+node_modules/
+playwright-report/
+test-results/
 
 # PyPI configuration file
 .pypirc

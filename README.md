@@ -21,12 +21,13 @@ The first milestone focuses on a working MVP foundation:
 - WebSocket RL solve streaming with live move updates and REST fallback.
 - Bounded RL branch trace viewer for kept, pruned, skipped, and solved search paths.
 - Replay package generation for reproducible RL solve inspection and import/export.
-- File-backed solve session persistence with list, load, save, and delete APIs.
+- Runtime solve session persistence with PostgreSQL when configured and JSON-file fallback for local use.
 - Historical solve analytics API over persisted replay sessions.
-- PostgreSQL baseline migration for sessions, cube states, solves, moves, solver runs, model versions, and metrics.
-- GitHub Actions test pipeline plus an API performance smoke benchmark.
+- PostgreSQL migration and runtime adapter for sessions, cube states, solves, moves, solver runs, model versions, and metrics.
+- GitHub Actions test pipeline plus Python coverage and API/WebSocket/frontend FPS performance smoke benchmarks.
 - Docker Compose deployment baseline for frontend, backend, PostgreSQL, and Redis.
 - Prometheus-compatible backend `/metrics` endpoint for API, WebSocket, solver, and model-version monitoring.
+- Optional Prometheus and Grafana monitoring profile with a preprovisioned Phase 11 dashboard.
 
 ## Project Layout
 
@@ -36,6 +37,7 @@ frontend/  Static MVP web app
 rl/        Reinforcement-learning research placeholders
 docs/      Architecture decisions and implementation notes
 docker-compose.yml  Local container orchestration for Phase 11
+deploy/    Production Compose baseline and image publishing notes
 ```
 
 ## Development Commands
@@ -75,6 +77,21 @@ Run frontend static smoke tests:
 .\.venv\Scripts\python.exe -m pytest -p no:cacheprovider frontend/tests
 ```
 
+Install and run frontend E2E tests:
+
+```powershell
+$env:PATH="D:\AppPrograms\nodejs;$env:PATH"
+npm.cmd install
+npx.cmd playwright install chromium
+npm.cmd run test:e2e
+```
+
+Run only the frontend animation FPS smoke check:
+
+```powershell
+npm.cmd run test:e2e:fps
+```
+
 Run RL environment tests:
 
 ```powershell
@@ -83,17 +100,45 @@ cd rl
 cd ..
 ```
 
+Run the combined backend and RL coverage report:
+
+```powershell
+.\.venv\Scripts\python.exe tools\coverage_report.py --out-dir reports
+```
+
+Run PostgreSQL integration and runtime storage tests when a local database is available:
+
+```powershell
+$env:RUBIC_TEST_DATABASE_URL="postgresql://postgres:admin@localhost:5432/rubic_rfl_test"
+.\.venv\Scripts\python.exe -m pytest -p no:cacheprovider backend\tests\test_postgres_integration.py backend\tests\test_postgres_runtime_store.py
+```
+
 Run the API performance smoke benchmark:
 
 ```powershell
 .\.venv\Scripts\python.exe tools\benchmark_api.py --iterations 10 --warmups 2 --out reports\performance-smoke.json
 ```
 
+Run the WebSocket performance smoke benchmark:
+
+```powershell
+.\.venv\Scripts\python.exe tools\benchmark_websocket.py --iterations 10 --warmups 2 --out reports\websocket-performance-smoke.json
+```
+
+Run the concurrent backend load smoke test:
+
+```powershell
+.\.venv\Scripts\python.exe tools\load_test_backend.py --requests 60 --concurrency 6 --warmups 6 --out reports\backend-load-smoke.json
+```
+
 The CI workflow in `.github/workflows/test.yml` installs both Python packages,
-runs backend, frontend static smoke, and RL tests, executes the benchmark with
-p95 smoke budgets, and uploads `reports/performance-smoke.json` as an artifact.
-It also validates the Docker Compose configuration and builds the backend and
-frontend images.
+runs backend, PostgreSQL integration, frontend static smoke, and RL tests,
+writes combined backend/RL coverage XML and JSON reports, executes API,
+WebSocket, backend load, and frontend FPS smoke checks, and uploads the
+generated report files as artifacts. It also validates the Docker Compose
+configuration, monitoring profile, host-port override, production Compose
+baseline, and Prometheus rules, builds the backend and frontend images, and
+runs Playwright Chromium E2E tests against the static UI.
 
 Run the containerized stack:
 
@@ -105,6 +150,24 @@ docker compose up --build
 The frontend is available at `http://127.0.0.1:5173`, and the backend health
 endpoint is available at `http://127.0.0.1:8000/health`. See
 `docs/phase-11-deployment.md` for service details and persistence notes.
+PostgreSQL and Redis stay private to the Compose network by default. If you
+need host access to the container database, add the host-port override:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.host-ports.yml up --build
+```
+
+That override binds PostgreSQL to `127.0.0.1:5433`, avoiding the common local
+PostgreSQL conflict on `5432`.
+
+Run the stack with the monitoring dashboard:
+
+```powershell
+docker compose --profile monitoring up --build
+```
+
+Prometheus is available at `http://127.0.0.1:9090`, and Grafana is available at
+`http://127.0.0.1:3000` with the credentials from `.env`.
 
 Generate a small supervised dataset:
 
@@ -183,7 +246,7 @@ $env:RUBIC_RL_MAX_STEPS="30"
 $env:RUBIC_RL_SEARCH_WIDTH="5"
 $env:RUBIC_RL_SEARCH_TOP_K="5"
 $env:RUBIC_RL_SEARCH_TRACE_LIMIT="200"
-$env:RUBIC_SESSION_STORE_DIR="replays\sessions"
+$env:RUBIC_SESSION_DATABASE_URL="postgresql://postgres:admin@localhost:5432/rubic_rfl_test"
 cd backend
 ..\.venv\Scripts\uvicorn.exe app.main:app --reload
 ```
@@ -203,7 +266,9 @@ first for live decision and move streaming, then falls back to
 policy-guided search trace and branch records beside the replay and enable
 `Export Replay` for a reloadable solve artifact. The Saved Sessions panel calls
 `/sessions`, loads stored replay packages, and saves the current replay package
-to the file-backed store.
+to the configured session store. The backend uses PostgreSQL when
+`RUBIC_SESSION_DATABASE_URL` or `DATABASE_URL` is set; otherwise it falls back
+to JSON files under `RUBIC_SESSION_STORE_DIR` or `replays/sessions`.
 
 Verify the API directly:
 
@@ -231,9 +296,9 @@ Inspect Prometheus-compatible metrics:
 Invoke-RestMethod "http://127.0.0.1:8000/metrics"
 ```
 
-The first production PostgreSQL migration is available at
-`backend/app/database/migrations/0001_session_persistence.sql`. Apply it to a
-development database with:
+The backend applies the first production PostgreSQL migration automatically when
+PostgreSQL session storage is active. To preapply it to a development database,
+run:
 
 ```powershell
 psql $env:DATABASE_URL -f backend/app/database/migrations/0001_session_persistence.sql

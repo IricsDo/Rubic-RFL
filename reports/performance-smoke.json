@@ -2,38 +2,38 @@
   "benchmarks": {
     "analytics_solves": {
       "count": 5,
-      "max_ms": 4.677,
-      "median_ms": 4.596,
-      "min_ms": 4.228,
-      "p95_ms": 4.664
+      "max_ms": 8.918,
+      "median_ms": 8.013,
+      "min_ms": 7.561,
+      "p95_ms": 8.772
     },
     "classical_solve_depth_3": {
       "count": 5,
-      "max_ms": 3.451,
-      "median_ms": 3.238,
-      "min_ms": 3.103,
-      "p95_ms": 3.414
+      "max_ms": 6.191,
+      "median_ms": 4.668,
+      "min_ms": 4.452,
+      "p95_ms": 6.049
     },
     "health": {
       "count": 5,
-      "max_ms": 2.218,
-      "median_ms": 1.959,
-      "min_ms": 1.761,
-      "p95_ms": 2.169
+      "max_ms": 2.988,
+      "median_ms": 2.357,
+      "min_ms": 2.119,
+      "p95_ms": 2.896
     },
     "scramble_depth_4": {
       "count": 5,
-      "max_ms": 2.878,
-      "median_ms": 2.458,
-      "min_ms": 2.356,
-      "p95_ms": 2.82
+      "max_ms": 3.149,
+      "median_ms": 2.813,
+      "min_ms": 2.566,
+      "p95_ms": 3.149
     },
     "validate_solved_cube": {
       "count": 5,
-      "max_ms": 2.381,
-      "median_ms": 2.124,
-      "min_ms": 2.032,
-      "p95_ms": 2.357
+      "max_ms": 3.517,
+      "median_ms": 3.041,
+      "min_ms": 2.776,
+      "p95_ms": 3.423
     }
   },
   "budgets_ms": {
@@ -43,7 +43,7 @@
     "scramble_depth_4": 150.0,
     "validate_solved_cube": 150.0
   },
-  "created_at": "2026-06-01T09:33:47.484296Z",
+  "created_at": "2026-06-01T12:07:12.738232Z",
   "iterations": 5,
   "schema_version": "rubic-rfl-performance-v1",
   "summary": {

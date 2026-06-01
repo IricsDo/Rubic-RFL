@@ -1,0 +1,16 @@
+{
+  "name": "rubic-rfl",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Real-time Rubik's Cube solver platform frontend E2E harness.",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:fps": "playwright test frontend/e2e/animation-fps.spec.js",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
+    "test:frontend:static": "python -m pytest -p no:cacheprovider frontend/tests"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
+  }
+}

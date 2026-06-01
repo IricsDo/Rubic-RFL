@@ -1,0 +1,47 @@
+groups:
+  - name: rubic-rfl
+    rules:
+      - alert: RubicRflBackendDown
+        expr: up{job="rubic-rfl-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Rubic RFL backend metrics scrape is down
+          description: Prometheus cannot scrape the FastAPI backend /metrics endpoint.
+
+      - alert: RubicRflHighHttpErrorRate
+        expr: |
+          sum(rate(rubic_http_request_errors_total[5m]))
+            / clamp_min(sum(rate(rubic_http_requests_total[5m])), 0.001) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Rubic RFL HTTP error rate is above 5 percent
+          description: Server-side HTTP failures are above the Phase 11 warning threshold.
+
+      - alert: RubicRflSlowAverageHttpLatency
+        expr: |
+          sum(rate(rubic_http_request_duration_seconds_sum[5m]))
+            / clamp_min(sum(rate(rubic_http_request_duration_seconds_count[5m])), 0.001) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Rubic RFL average HTTP latency is above 500 ms
+          description: The backend average request duration is above the local deployment budget.
+
+      - alert: RubicRflLowSolverSuccessRate
+        expr: |
+          (
+            sum(rate(rubic_solver_success_total[15m]))
+              / clamp_min(sum(rate(rubic_solver_runs_total[15m])), 0.001)
+          ) < 0.8
+          and sum(rate(rubic_solver_runs_total[15m])) > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Rubic RFL solver success rate is below 80 percent
+          description: Recent solver runs are completing below the local deployment success threshold.

@@ -2,19 +2,32 @@
 
 ## Scope
 
-The backend now persists solver sessions as replay-package JSON files. This is a
-lightweight local store that keeps the product usable while the PostgreSQL
-schema and migrations from the long-term plan are still pending.
+The backend persists solver sessions behind a shared storage interface. Runtime
+uses PostgreSQL when `RUBIC_SESSION_DATABASE_URL` or `DATABASE_URL` is set, and
+falls back to replay-package JSON files for lightweight local runs.
 
-## Storage Location
+## Storage Configuration
 
-By default, sessions are stored under:
+PostgreSQL runtime storage:
+
+```powershell
+$env:RUBIC_SESSION_DATABASE_URL="postgresql://postgres:admin@localhost:5432/rubic_rfl_test"
+```
+
+The backend applies the Phase 9 migration automatically before the first
+session operation. Force JSON-file storage even when a database URL exists:
+
+```powershell
+$env:RUBIC_SESSION_STORAGE_BACKEND="files"
+```
+
+Without a database URL, sessions are stored under:
 
 ```text
 replays/sessions/
 ```
 
-The directory is ignored by source control. Override it for local runs or tests:
+Override the JSON location for local runs or tests:
 
 ```powershell
 $env:RUBIC_SESSION_STORE_DIR="D:\path\to\sessions"
@@ -62,9 +75,9 @@ The Replay panel now includes `Saved Sessions` controls:
 - `Load` imports a saved replay package into the cube and timeline.
 - `Delete` hides a stored session by writing a tombstone record.
 
-## PostgreSQL Follow-Up
+## PostgreSQL Schema
 
-The production schema is defined in:
+The production schema is defined and used by the runtime adapter:
 
 ```text
 backend/app/database/migrations/0001_session_persistence.sql
@@ -73,11 +86,14 @@ backend/app/database/migrations/0001_session_persistence.sql
 It creates `users`, `sessions`, `cube_states`, `solves`, `moves`,
 `solver_runs`, `model_versions`, and `metrics`, plus indexes for session
 history, solver status filters, model-version lookups, and metric time series.
-The eventual database-backed store should replace the JSON implementation
-behind the same API contract.
+The `sessions.replay_package` JSONB column remains the canonical replay
+artifact, while related tables support filtering, analytics, and future
+dashboards.
 
 ## Verification
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -p no:cacheprovider backend\tests
+$env:RUBIC_TEST_DATABASE_URL="postgresql://postgres:admin@localhost:5432/rubic_rfl_test"
+.\.venv\Scripts\python.exe -m pytest -p no:cacheprovider backend\tests\test_postgres_integration.py backend\tests\test_postgres_runtime_store.py
 ```

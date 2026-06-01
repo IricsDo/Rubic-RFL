@@ -1,0 +1,21 @@
+name: rubic-rfl
+
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    networks:
+      - private
+      - public
+
+  redis:
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    networks:
+      - private
+      - public
+
+networks:
+  public:
+  private:
+    internal: true
