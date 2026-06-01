@@ -1,0 +1,368 @@
+{
+  "created_at": "2026-06-01T04:49:05.169125Z",
+  "duration_ms": 2,
+  "final_state": {
+    "faces": {
+      "B": [
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B"
+      ],
+      "D": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "F": [
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "F"
+      ],
+      "L": [
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L"
+      ],
+      "R": [
+        "R",
+        "R",
+        "R",
+        "R",
+        "R",
+        "R",
+        "R",
+        "R",
+        "R"
+      ],
+      "U": [
+        "U",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U"
+      ]
+    },
+    "history": [],
+    "is_solved": true,
+    "stickers": "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB",
+    "validation": {
+      "details": {
+        "corner_orientation_sum_mod_3": 0,
+        "corner_parity": 0,
+        "edge_orientation_sum_mod_2": 0,
+        "edge_parity": 0,
+        "sticker_counts": {
+          "B": 9,
+          "D": 9,
+          "F": 9,
+          "L": 9,
+          "R": 9,
+          "U": 9
+        }
+      },
+      "errors": [],
+      "valid": true
+    }
+  },
+  "initial_state": {
+    "faces": {
+      "B": [
+        "F",
+        "R",
+        "U",
+        "D",
+        "B",
+        "F",
+        "D",
+        "F",
+        "B"
+      ],
+      "D": [
+        "U",
+        "F",
+        "R",
+        "U",
+        "D",
+        "R",
+        "R",
+        "L",
+        "B"
+      ],
+      "F": [
+        "F",
+        "F",
+        "F",
+        "L",
+        "F",
+        "B",
+        "L",
+        "D",
+        "U"
+      ],
+      "L": [
+        "B",
+        "B",
+        "U",
+        "U",
+        "L",
+        "D",
+        "D",
+        "L",
+        "F"
+      ],
+      "R": [
+        "D",
+        "B",
+        "D",
+        "U",
+        "R",
+        "R",
+        "B",
+        "U",
+        "L"
+      ],
+      "U": [
+        "L",
+        "B",
+        "L",
+        "D",
+        "U",
+        "L",
+        "R",
+        "R",
+        "R"
+      ]
+    },
+    "history": [],
+    "is_solved": false,
+    "stickers": "LBLDULRRRDBDURRBULFFFLFBLDUUFRUDRRLBBBUULDDLFFRUDBFDFB",
+    "validation": {
+      "details": {
+        "corner_orientation_sum_mod_3": 0,
+        "corner_parity": 1,
+        "edge_orientation_sum_mod_2": 0,
+        "edge_parity": 1,
+        "sticker_counts": {
+          "B": 9,
+          "D": 9,
+          "F": 9,
+          "L": 9,
+          "R": 9,
+          "U": 9
+        }
+      },
+      "errors": [],
+      "valid": true
+    }
+  },
+  "model": {
+    "checkpoint": null,
+    "version": null
+  },
+  "move_count": 10,
+  "moves": [
+    "F'",
+    "U",
+    "R'",
+    "U2",
+    "B'",
+    "U2",
+    "L2",
+    "D'",
+    "B2",
+    "R2"
+  ],
+  "schema_version": "rubic-rfl-replay-v1",
+  "search": {
+    "beam_width": null,
+    "depth_reached": null,
+    "expanded_states": null,
+    "max_depth": null,
+    "strategy": null,
+    "top_k": null,
+    "trace": null,
+    "visited_states": null
+  },
+  "session_id": "classical-session",
+  "solver": "classical-kociemba",
+  "solver_result": {
+    "duration_ms": 2,
+    "message": "Solved with Kociemba two-phase search",
+    "move_count": 10,
+    "moves": [
+      "F'",
+      "U",
+      "R'",
+      "U2",
+      "B'",
+      "U2",
+      "L2",
+      "D'",
+      "B2",
+      "R2"
+    ],
+    "solver": "classical-kociemba",
+    "status": "solved"
+  },
+  "status": "solved",
+  "steps": [
+    {
+      "after_stickers": "LBLDULDUBRBDFRRUULFBUFFDFLLUDFUDRRLBBBRULRDLRFRUDBFDFB",
+      "before_stickers": "LBLDULRRRDBDURRBULFFFLFBLDUUFRUDRRLBBBUULDDLFFRUDBFDFB",
+      "decision": {
+        "confidence": null,
+        "estimated_distance_to_solution": 10,
+        "selected_move": "F'",
+        "top_candidates": []
+      },
+      "is_solved_after": false,
+      "move": "F'",
+      "step": 1
+    },
+    {
+      "after_stickers": "DDLUUBBLLFRUFRRUULRBDFFDFLLUDFUDRRLBFBUULRDLRBBRDBFDFB",
+      "before_stickers": "LBLDULDUBRBDFRRUULFBUFFDFLLUDFUDRRLBBBRULRDLRFRUDBFDFB",
+      "decision": {
+        "confidence": null,
+        "estimated_distance_to_solution": 9,
+        "selected_move": "U",
+        "top_candidates": []
+      },
+      "is_solved_after": false,
+      "move": "U",
+      "step": 2
+    },
+    {
+      "after_stickers": "DDDUUDBLBURLRRUFFURBLFFBFLLUDDUDDRLLFBUULRDLRBBRRBFFFB",
+      "before_stickers": "DDLUUBBLLFRUFRRUULRBDFFDFLLUDFUDRRLBFBUULRDLRBBRDBFDFB",
+      "decision": {
+        "confidence": null,
+        "estimated_distance_to_solution": 8,
+        "selected_move": "R'",
+        "top_candidates": []
+      },
+      "is_solved_after": false,
+      "move": "R'",
+      "step": 3
+    },
+    {
+      "after_stickers": "BLBDUUDDDFBURRUFFUBBRFFBFLLUDDUDDRLLURLULRDLRRBLRBFFFB",
+      "before_stickers": "DDDUUDBLBURLRRUFFURBLFFBFLLUDDUDDRLLFBUULRDLRBBRRBFFFB",
+      "decision": {
+        "confidence": null,
+        "estimated_distance_to_solution": 7,
+        "selected_move": "U2",
+        "top_candidates": []
+      },
+      "is_solved_after": false,
+      "move": "U2",
+      "step": 4
+    },
+    {
+      "after_stickers": "DUUDUUDDDFBBRRLFFBBBRFFBFLLUDDUDDUUURRLLLRLLRLFBBBFRRF",
+      "before_stickers": "BLBDUUDDDFBURRUFFUBBRFFBFLLUDDUDDRLLURLULRDLRRBLRBFFFB",
+      "decision": {
+        "confidence": null,
+        "estimated_distance_to_solution": 6,
+        "selected_move": "B'",
+        "top_candidates": []
+      },
+      "is_solved_after": false,
+      "move": "B'",
+      "step": 5
+    },
+    {
+      "after_stickers": "DDDUUDUUDRRLRRLFFBLFBFFBFLLUDDUDDUUUFBBLLRLLRBBRBBFRRF",
+      "before_stickers": "DUUDUUDDDFBBRRLFFBBBRFFBFLLUDDUDDUUURRLLLRLLRLFBBBFRRF",
+      "decision": {
+        "confidence": null,
+        "estimated_distance_to_solution": 5,
+        "selected_move": "U2",
+        "top_candidates": []
+      },
+      "is_solved_after": false,
+      "move": "U2",
+      "step": 6
+    },
+    {
+      "after_stickers": "UDDUUDUUDRRLRRLFFBFFBFFBRLLDDDUDDUUURLLRLLBBFBBFBBFRRL",
+      "before_stickers": "DDDUUDUUDRRLRRLFFBLFBFFBFLLUDDUDDUUUFBBLLRLLRBBRBBFRRF",
+      "decision": {
+        "confidence": null,
+        "estimated_distance_to_solution": 4,
+        "selected_move": "L2",
+        "top_candidates": []
+      },
+      "is_solved_after": false,
+      "move": "L2",
+      "step": 7
+    },
+    {
+      "after_stickers": "UDDUUDUUDRRLRRLRRLFFBFFBFFBDDUDDUDUURLLRLLRLLBBFBBFBBF",
+      "before_stickers": "UDDUUDUUDRRLRRLFFBFFBFFBRLLDDDUDDUUURLLRLLBBFBBFBBFRRL",
+      "decision": {
+        "confidence": null,
+        "estimated_distance_to_solution": 3,
+        "selected_move": "D'",
+        "top_candidates": []
+      },
+      "is_solved_after": false,
+      "move": "D'",
+      "step": 8
+    },
+    {
+      "after_stickers": "UUDUUDUUDRRRRRRRRRFFBFFBFFBDDUDDUDDULLLLLLLLLFBBFBBFBB",
+      "before_stickers": "UDDUUDUUDRRLRRLRRLFFBFFBFFBDDUDDUDUURLLRLLRLLBBFBBFBBF",
+      "decision": {
+        "confidence": null,
+        "estimated_distance_to_solution": 2,
+        "selected_move": "B2",
+        "top_candidates": []
+      },
+      "is_solved_after": false,
+      "move": "B2",
+      "step": 9
+    },
+    {
+      "after_stickers": "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB",
+      "before_stickers": "UUDUUDUUDRRRRRRRRRFFBFFBFFBDDUDDUDDULLLLLLLLLFBBFBBFBB",
+      "decision": {
+        "confidence": null,
+        "estimated_distance_to_solution": 1,
+        "selected_move": "R2",
+        "top_candidates": []
+      },
+      "is_solved_after": true,
+      "move": "R2",
+      "step": 10
+    }
+  ]
+}

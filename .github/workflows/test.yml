@@ -1,0 +1,77 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "./backend[dev]"
+          python -m pip install -e "./rl[dev]"
+
+      - name: Run backend tests
+        env:
+          RUBIC_SESSION_STORE_DIR: ${{ runner.temp }}/rubic-rfl-sessions
+        run: python -m pytest -p no:cacheprovider backend/tests
+
+      - name: Run frontend static smoke tests
+        run: python -m pytest -p no:cacheprovider frontend/tests
+
+      - name: Run RL tests
+        working-directory: rl
+        run: python -m pytest -p no:cacheprovider tests
+
+      - name: Run API performance smoke benchmark
+        run: >
+          python tools/benchmark_api.py
+          --iterations 5
+          --warmups 1
+          --out reports/performance-smoke.json
+          --enforce-budgets
+
+      - name: Upload performance report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-smoke
+          path: reports/performance-smoke.json
+          if-no-files-found: ignore
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Compose configuration
+        run: docker compose config
+
+      - name: Build backend image
+        run: docker build -f backend/Dockerfile --target runtime -t rubic-rfl-backend:ci .
+
+      - name: Build frontend image
+        run: docker build -f frontend/Dockerfile -t rubic-rfl-frontend:ci .

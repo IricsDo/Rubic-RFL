@@ -1,0 +1,84 @@
+{
+  "config": {
+    "depths": [
+      1
+    ],
+    "max_steps": 1,
+    "samples_per_depth": 2,
+    "seed": 20260531
+  },
+  "policies": [
+    {
+      "label": "linear",
+      "model_path": "..\\checkpoints\\linear-policy-eval-smoke.npz",
+      "policy_type": "auto",
+      "summary": {
+        "by_depth": {
+          "1": {
+            "attempts": 2,
+            "avg_reward": 1.0,
+            "avg_steps_all": 1.0,
+            "avg_steps_solved": 1.0,
+            "solve_rate": 1.0,
+            "solved": 2
+          }
+        },
+        "overall": {
+          "attempts": 2,
+          "avg_reward": 1.0,
+          "avg_steps_all": 1.0,
+          "avg_steps_solved": 1.0,
+          "solve_rate": 1.0,
+          "solved": 2
+        }
+      }
+    },
+    {
+      "label": "mlp",
+      "model_path": "..\\checkpoints\\mlp-policy-smoke.npz",
+      "policy_type": "auto",
+      "summary": {
+        "by_depth": {
+          "1": {
+            "attempts": 2,
+            "avg_reward": 1.0,
+            "avg_steps_all": 1.0,
+            "avg_steps_solved": 1.0,
+            "solve_rate": 1.0,
+            "solved": 2
+          }
+        },
+        "overall": {
+          "attempts": 2,
+          "avg_reward": 1.0,
+          "avg_steps_all": 1.0,
+          "avg_steps_solved": 1.0,
+          "solve_rate": 1.0,
+          "solved": 2
+        }
+      }
+    }
+  ],
+  "ranking": [
+    {
+      "attempts": 2,
+      "avg_reward": 1.0,
+      "avg_steps_all": 1.0,
+      "avg_steps_solved": 1.0,
+      "label": "linear",
+      "rank": 1,
+      "solve_rate": 1.0,
+      "solved": 2
+    },
+    {
+      "attempts": 2,
+      "avg_reward": 1.0,
+      "avg_steps_all": 1.0,
+      "avg_steps_solved": 1.0,
+      "label": "mlp",
+      "rank": 2,
+      "solve_rate": 1.0,
+      "solved": 2
+    }
+  ]
+}

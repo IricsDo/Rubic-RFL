@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rubic RFL Solver MVP</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Skip to workspace</a>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Rubic RFL</p>
+        <h1>Real-time Rubik's Cube Solver</h1>
+      </div>
+      <div class="status-strip" aria-live="polite">
+        <span id="backendBadge" class="badge">API unchecked</span>
+        <span id="validityBadge" class="badge">Valid</span>
+        <span id="solvedBadge" class="badge">Solved</span>
+        <span id="moveCountBadge" class="badge">0 moves</span>
+      </div>
+    </header>
+
+    <main id="workspace" class="workspace">
+      <section class="cube-panel" aria-label="Interactive cube viewport">
+        <div class="viewport-toolbar">
+          <button type="button" id="viewResetButton">Reset View</button>
+          <p id="viewportHint">Drag the cube to rotate the camera.</p>
+        </div>
+        <div id="cubeStage" class="cube-stage">
+          <div id="cube" class="cube" aria-label="3D Rubik's Cube"></div>
+        </div>
+      </section>
+
+      <section class="control-panel" aria-label="Cube controls">
+        <div class="panel-section">
+          <h2>Moves</h2>
+          <div id="moveButtons" class="move-grid"></div>
+        </div>
+
+        <div class="panel-section">
+          <h2>Backend</h2>
+          <label class="stacked-label" for="apiBaseInput">API base URL</label>
+          <input id="apiBaseInput" type="url" value="http://127.0.0.1:8000" />
+          <button type="button" id="apiCheckButton">Check API</button>
+        </div>
+
+        <div class="panel-section">
+          <h2>Scramble</h2>
+          <div class="field-row">
+            <label for="depthInput">Depth</label>
+            <input id="depthInput" type="number" min="0" max="100" value="20" />
+          </div>
+          <div class="field-row">
+            <label for="seedInput">Seed</label>
+            <input id="seedInput" type="text" value="20260531" />
+          </div>
+          <div class="button-row">
+            <button type="button" id="scrambleButton" class="primary">Scramble</button>
+            <button type="button" id="resetButton">Reset</button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h2>Replay</h2>
+          <div class="segmented-control" aria-label="Solver mode">
+            <button type="button" id="classicalModeButton" aria-pressed="true">Classical</button>
+            <button type="button" id="rlModeButton" aria-pressed="false">RL</button>
+          </div>
+          <div class="button-row">
+            <button type="button" id="solveButton" class="primary">Solve</button>
+            <button type="button" id="playButton">Play</button>
+          </div>
+          <div class="button-row">
+            <button type="button" id="stepBackButton">Step Back</button>
+            <button type="button" id="stepForwardButton">Step Forward</button>
+          </div>
+          <div class="progress-shell" aria-label="Replay progress">
+            <div id="progressBar" class="progress-bar"></div>
+          </div>
+          <p id="solverStatus" class="status-text">Ready for a scramble.</p>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-heading-row">
+            <h2>Saved Sessions</h2>
+            <span id="savedSessionsBadge" class="badge">Not loaded</span>
+          </div>
+          <div class="button-row">
+            <button type="button" id="refreshSessionsButton">Refresh</button>
+            <button type="button" id="saveReplayButton">Save Replay</button>
+          </div>
+          <ol id="savedSessionsList" class="session-list"></ol>
+        </div>
+      </section>
+
+      <section class="details-panel" aria-label="State and timeline">
+        <div class="panel-section">
+          <h2>Move Timeline</h2>
+          <ol id="historyList" class="timeline"></ol>
+        </div>
+
+        <div class="panel-section">
+          <h2>Solution</h2>
+          <ol id="solutionList" class="timeline"></ol>
+        </div>
+
+        <div id="rlDecisionPanel" class="panel-section rl-decision-panel" hidden>
+          <div class="section-heading-row">
+            <h2>RL Decision Trace</h2>
+            <span id="rlStrategyBadge" class="badge info">Policy search</span>
+          </div>
+          <div id="rlDecisionStats" class="metric-grid"></div>
+          <p class="stacked-label">Current cube state</p>
+          <code id="rlCurrentState" class="state-fingerprint"></code>
+          <ol id="rlDecisionList" class="decision-list"></ol>
+          <div id="rlSearchTraceBlock" class="search-trace-block" hidden>
+            <div class="section-heading-row">
+              <h3>Search Trace</h3>
+              <span id="rlSearchTraceBadge" class="badge info">0 records</span>
+            </div>
+            <ol id="rlSearchTraceList" class="search-trace-list"></ol>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h2>Move Sequence</h2>
+          <label class="stacked-label" for="sequenceInput">Apply moves to current state</label>
+          <textarea id="sequenceInput" rows="3">R U R' U'</textarea>
+          <button type="button" id="applySequenceButton">Apply Sequence</button>
+        </div>
+
+        <div class="panel-section">
+          <h2>State JSON</h2>
+          <label class="stacked-label" for="stateJson">State or replay package JSON</label>
+          <textarea id="stateJson" rows="7" spellcheck="false"></textarea>
+          <div class="button-row">
+            <button type="button" id="exportButton">Export</button>
+            <button type="button" id="exportReplayButton">Export Replay</button>
+            <button type="button" id="importButton">Import</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,213 @@
+{
+  "created_at": "2026-06-01T09:02:41.243856Z",
+  "duration_ms": 0,
+  "final_state": {
+    "faces": {
+      "B": [
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B"
+      ],
+      "D": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "F": [
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "F"
+      ],
+      "L": [
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L"
+      ],
+      "R": [
+        "R",
+        "R",
+        "R",
+        "R",
+        "R",
+        "R",
+        "R",
+        "R",
+        "R"
+      ],
+      "U": [
+        "R",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U"
+      ]
+    },
+    "history": [],
+    "is_solved": false,
+    "stickers": "RUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB",
+    "validation": {
+      "details": {
+        "sticker_counts": {
+          "B": 9,
+          "D": 9,
+          "F": 9,
+          "L": 9,
+          "R": 10,
+          "U": 8
+        }
+      },
+      "errors": [
+        "Sticker U appears 8 times instead of 9",
+        "Sticker R appears 10 times instead of 9"
+      ],
+      "valid": false
+    }
+  },
+  "initial_state": {
+    "faces": {
+      "B": [
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B"
+      ],
+      "D": [
+        "D",
+        "D",
+        "D",
+        "D",
+        "D",
+        "D",
+        "D",
+        "D",
+        "D"
+      ],
+      "F": [
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "F"
+      ],
+      "L": [
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L"
+      ],
+      "R": [
+        "R",
+        "R",
+        "R",
+        "R",
+        "R",
+        "R",
+        "R",
+        "R",
+        "R"
+      ],
+      "U": [
+        "R",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U",
+        "U"
+      ]
+    },
+    "history": [],
+    "is_solved": false,
+    "stickers": "RUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB",
+    "validation": {
+      "details": {
+        "sticker_counts": {
+          "B": 9,
+          "D": 9,
+          "F": 9,
+          "L": 9,
+          "R": 10,
+          "U": 8
+        }
+      },
+      "errors": [
+        "Sticker U appears 8 times instead of 9",
+        "Sticker R appears 10 times instead of 9"
+      ],
+      "valid": false
+    }
+  },
+  "model": {
+    "checkpoint": null,
+    "version": null
+  },
+  "move_count": 0,
+  "moves": [],
+  "schema_version": "rubic-rfl-replay-v1",
+  "search": {
+    "beam_width": null,
+    "depth_reached": null,
+    "expanded_states": null,
+    "max_depth": null,
+    "strategy": null,
+    "top_k": null,
+    "trace": null,
+    "visited_states": null
+  },
+  "session_id": "replay-c43c626c1d2a49408133afc127567a1a",
+  "solver": "classical-kociemba",
+  "solver_result": {
+    "duration_ms": 0,
+    "message": "Sticker U appears 8 times instead of 9; Sticker R appears 10 times instead of 9",
+    "move_count": 0,
+    "moves": [],
+    "solver": "classical-kociemba",
+    "status": "invalid"
+  },
+  "status": "invalid",
+  "steps": []
+}
