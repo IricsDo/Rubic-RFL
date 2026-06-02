@@ -128,6 +128,16 @@ jobs:
       - name: Validate production Compose configuration
         run: docker compose -f deploy/compose.production.yml --env-file deploy/production.env.example config
 
+      - name: Validate production monitoring Compose profile
+        run: docker compose -f deploy/compose.production.yml --env-file deploy/production.env.example --profile monitoring config
+
+      - name: Validate production deployment env schema
+        run: >
+          python3 tools/verify_deployment.py
+          --env-file deploy/production.env.example
+          --compose-file deploy/compose.production.yml
+          --require-model-file
+
       - name: Validate Prometheus configuration
         run: >
           docker run --rm
@@ -140,6 +150,31 @@ jobs:
 
       - name: Build frontend image
         run: docker build -f frontend/Dockerfile -t rubic-rfl-frontend:ci .
+
+      - name: Start Docker Compose smoke stack
+        run: docker compose up -d --build --wait backend frontend
+
+      - name: Run external network load smoke test
+        run: >
+          python3 tools/load_test_network.py
+          --base-url http://127.0.0.1:8000
+          --requests 24
+          --concurrency 4
+          --warmups 4
+          --out reports/network-load-smoke.json
+          --enforce-budgets
+
+      - name: Upload Docker smoke report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: docker-smoke-report
+          path: reports/network-load-smoke.json
+          if-no-files-found: ignore
+
+      - name: Stop Docker Compose smoke stack
+        if: always()
+        run: docker compose down -v
 
   frontend-e2e:
     name: Frontend E2E

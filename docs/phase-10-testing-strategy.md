@@ -28,6 +28,7 @@ python tools/coverage_report.py --out-dir reports
 python tools/benchmark_api.py --iterations 5 --warmups 1 --out reports/performance-smoke.json --enforce-budgets
 python tools/benchmark_websocket.py --iterations 5 --warmups 1 --out reports/websocket-performance-smoke.json --enforce-budgets
 python tools/load_test_backend.py --requests 24 --concurrency 4 --warmups 4 --out reports/backend-load-smoke.json --enforce-budgets
+python tools/load_test_network.py --base-url http://127.0.0.1:8000 --requests 24 --concurrency 4 --warmups 4 --out reports/network-load-smoke.json --enforce-budgets
 npm run test:e2e
 ```
 
@@ -52,6 +53,7 @@ cd ..
 .\.venv\Scripts\python.exe tools\benchmark_api.py --iterations 10 --warmups 2 --out reports\performance-smoke.json
 .\.venv\Scripts\python.exe tools\benchmark_websocket.py --iterations 10 --warmups 2 --out reports\websocket-performance-smoke.json
 .\.venv\Scripts\python.exe tools\load_test_backend.py --requests 60 --concurrency 6 --warmups 6 --out reports\backend-load-smoke.json
+.\.venv\Scripts\python.exe tools\load_test_network.py --base-url http://127.0.0.1:8000 --requests 60 --concurrency 6 --warmups 6 --out reports\network-load-smoke.json
 npm.cmd run test:e2e:fps
 ```
 
@@ -164,11 +166,18 @@ overall latency percentiles, and per-scenario p95/p99 values to
 `reports/backend-load-smoke.json`. The CI budget enforces zero request errors,
 minimum throughput, overall p95 latency, and route-level p95 ceilings.
 
+`tools/load_test_network.py` runs the same style of mixed-route check through a
+real HTTP client against a running backend, normally the Docker/Uvicorn service
+on `http://127.0.0.1:8000`. It also probes `/solve/rl/status` so container
+runtime model configuration is covered by the external smoke test. It writes
+`reports/network-load-smoke.json`.
+
 `frontend/e2e/animation-fps.spec.js` records the frontend animation smoke
 metrics for the MVP smoothness criterion and writes
 `reports/frontend-fps-smoke.json`.
 
 ## Follow-Up Work
 
-Next testing additions should cover external Uvicorn/Docker load testing with a
-network client once deployment ports and environment configuration are stable.
+Next testing additions should add longer staging-scale load profiles and
+production-like data volumes once deployment ports and environment
+configuration are stable.

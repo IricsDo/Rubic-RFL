@@ -10,11 +10,16 @@ This directory contains the DeepCubeA-inspired research track.
 - `rubic_rl/datasets/canonical.py` creates exhaustive short-depth records.
 - `rubic_rl/policies/linear_policy.py` trains a NumPy softmax baseline policy.
 - `rubic_rl/policies/mlp_policy.py` trains a NumPy MLP baseline policy.
+- `rubic_rl/policies/torch_policy.py` adapts optional PyTorch policy/value
+  checkpoints for evaluation and search.
+- `rubic_rl/models/policy_value.py` defines the optional PyTorch residual
+  policy/value network.
 - `rubic_rl/evaluation/policy_eval.py` evaluates policy checkpoints in the environment.
 - `rubic_rl/evaluation/compare_policies.py` compares and ranks checkpoints.
 - `rubic_rl/evaluation/search_eval.py` benchmarks greedy rollout against beam search.
 - `rubic_rl/training/baseline_experiment.py` runs dataset generation, training,
   comparison, and report writing in one command.
+- `rubic_rl/training/adi.py` trains the optional PyTorch policy/value baseline.
 - `tests/` verifies the environment, datasets, supervised policy, and evaluator.
 
 The RL track should consume the shared cube engine behavior but remain isolated
@@ -30,6 +35,14 @@ cd backend
 python -m pip install -e ".[dev]"
 cd ..\rl
 python -m pip install -e ".[dev]"
+```
+
+Install the optional PyTorch training path when you need the policy/value
+network:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL\rl
+..\.venv\Scripts\python.exe -m pip install -e ".[torch,dev]"
 ```
 
 Run the RL tests:
@@ -95,6 +108,20 @@ cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL\rl
 ..\.venv\Scripts\python.exe -m rubic_rl.training.baseline_experiment --depths 1 2 3 --samples-per-depth 100 --evaluation-samples-per-depth 100 --evaluation-max-steps 30 --seed 20260531
 ```
 
+Train the PyTorch ADI-style policy/value baseline:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL\rl
+..\.venv\Scripts\python.exe -m rubic_rl.training.adi --depths 1 2 3 --samples-per-depth 100 --iterations 1 --epochs-per-iteration 5 --seed 20260531
+```
+
+Evaluate the PyTorch ADI checkpoint:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL\rl
+..\.venv\Scripts\python.exe -m rubic_rl.evaluation.search_eval --model ..\checkpoints\torch-policy-value-adi.pt --policy-type auto --depths 1 2 3 --samples-per-depth 100 --max-depth 30 --beam-width 5 --top-k 5 --seed 20260531 --out ..\reports\adi-search-evaluation.json
+```
+
 Use the environment directly:
 
 ```python
@@ -148,13 +175,23 @@ uses the same features, labels, and checkpoint format family as `LinearPolicy`,
 which makes solve-rate comparisons reproducible before adding deeper RL
 algorithms or external ML dependencies.
 
+## PyTorch Policy/Value Baseline
+
+`RubiksPolicyValueNet` is an optional residual PyTorch model with a policy head
+over the fixed 18 actions and a scalar value head for normalized distance to the
+solved state. `rubic_rl.training.adi` generates reverse-scrambled states,
+trains policy and value losses together, and writes a `.pt` checkpoint with
+model version metadata. See `docs/stage-2-adi-policy-value-training.md` for the
+command and report format.
+
 ## Policy Evaluation
 
 `evaluate_policy_on_env` runs a policy against seeded random scrambles and
 `evaluate_policy_on_scrambles` runs explicit scrambles for controlled tests. The
 CLI prints JSON solve-rate summaries grouped by scramble depth. Add
 `--include-episodes` when you need per-rollout predicted moves and rewards.
-Use `--policy-type auto` to detect linear and MLP checkpoints automatically.
+Use `--policy-type auto` to detect linear, MLP, and Torch checkpoints
+automatically.
 
 ## Policy Comparison
 
@@ -181,11 +218,18 @@ See `docs/stage-2-baseline-experiment-pipeline.md` for details.
 
 ## Backend Integration
 
-The backend `/solve/rl` endpoint can load a selected `.npz` checkpoint and run a
-bounded policy-guided beam search. Set `RUBIC_RL_MODEL_PATH` before starting
-Uvicorn, for example `checkpoints\mlp-baseline-depth-1-2-3.npz`, or use the
-top-ranked path from `reports\baseline-experiment.json`. Tune
-`RUBIC_RL_SEARCH_WIDTH` and `RUBIC_RL_SEARCH_TOP_K` when comparing latency
-against solve rate. Keep the RL package installed in the same virtual
-environment. See `docs/stage-2-rl-backend-integration.md` and
+The backend `/solve/rl` endpoint can load selected `.npz` policies and `.pt`
+Torch policy/value checkpoints, then run bounded policy-guided beam search. Set
+`RUBIC_RL_MODEL_PATH`, `RUBIC_RL_POLICY_TYPE=auto`, and
+`RUBIC_RL_POLICY_DEVICE=cpu` before starting Uvicorn. For the current Torch
+baseline, point the model path at
+`checkpoints\torch-policy-value-adi-depth-1-10-regularized.pt` and set
+`RUBIC_RL_POLICY_TYPE=torch`. Tune `RUBIC_RL_SEARCH_WIDTH` and
+`RUBIC_RL_SEARCH_TOP_K` when comparing latency against solve rate. Keep the RL
+package installed in the same virtual environment, with the Torch extra for
+`.pt` checkpoints. See `docs/stage-2-rl-backend-integration.md` and
 `docs/stage-3-rl-inference-search.md` for the API contract and search behavior.
+
+Use `GET /solve/rl/status` to inspect the configured runtime without solving.
+Add `?load=true` to force-load the checkpoint and verify Torch or NumPy policy
+metadata before a deployment or demo.

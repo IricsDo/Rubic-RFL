@@ -180,12 +180,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Evaluate a trained Rubik policy with Gymnasium rollouts."
     )
-    parser.add_argument("--model", required=True, type=Path, help="Input .npz model.")
+    parser.add_argument("--model", required=True, type=Path, help="Input model checkpoint.")
     parser.add_argument(
         "--policy-type",
-        choices=("auto", "linear", "mlp"),
+        choices=("auto", "linear", "mlp", "torch"),
         default="auto",
-        help="Checkpoint policy type. 'auto' detects linear and MLP checkpoints.",
+        help="Checkpoint policy type. 'auto' detects .npz and .pt checkpoints.",
     )
     parser.add_argument(
         "--depths",

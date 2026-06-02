@@ -61,6 +61,8 @@ def build_replay_package(
         "model": {
             "version": details.get("model_version"),
             "checkpoint": details.get("model_checkpoint"),
+            "policy_type": details.get("policy_type"),
+            "device": details.get("policy_device"),
         },
         "search": {
             "strategy": details.get("strategy"),

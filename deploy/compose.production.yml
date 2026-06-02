@@ -41,6 +41,8 @@ services:
       RUBIC_SESSION_STORAGE_BACKEND: "${RUBIC_SESSION_STORAGE_BACKEND:-postgres}"
       RUBIC_SESSION_STORE_DIR: "/data/sessions"
       RUBIC_RL_MODEL_PATH: "/models/${RUBIC_RL_MODEL_FILE:-mlp-baseline-depth-1-2-3.npz}"
+      RUBIC_RL_POLICY_TYPE: "${RUBIC_RL_POLICY_TYPE:-auto}"
+      RUBIC_RL_POLICY_DEVICE: "${RUBIC_RL_POLICY_DEVICE:-cpu}"
       RUBIC_RL_MAX_STEPS: "${RUBIC_RL_MAX_STEPS:-30}"
       RUBIC_RL_SEARCH_WIDTH: "${RUBIC_RL_SEARCH_WIDTH:-5}"
       RUBIC_RL_SEARCH_TOP_K: "${RUBIC_RL_SEARCH_TOP_K:-5}"
@@ -105,12 +107,85 @@ services:
     mem_limit: 128m
     cpus: 0.25
 
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    profiles:
+      - monitoring
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ../monitoring/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    networks:
+      - public
+      - private
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 512m
+    cpus: 0.5
+
+  grafana:
+    image: grafana/grafana:11.3.1
+    profiles:
+      - monitoring
+    restart: unless-stopped
+    env_file:
+      - path: production.env
+        required: false
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER:-admin}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-replace_with_a_long_random_password}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "${GRAFANA_ANONYMOUS_ENABLED:-false}"
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - public
+      - private
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 512m
+    cpus: 0.5
+
 networks:
   public:
   private:
     internal: true
 
 volumes:
+  grafana_data:
   postgres_data:
+  prometheus_data:
   redis_data:
   replay_sessions:

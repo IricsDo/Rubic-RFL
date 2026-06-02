@@ -27,6 +27,8 @@ single-action probability distribution.
 
 ```powershell
 $env:RUBIC_RL_MODEL_PATH="checkpoints\mlp-baseline-depth-1-2-3.npz"
+$env:RUBIC_RL_POLICY_TYPE="auto"
+$env:RUBIC_RL_POLICY_DEVICE="cpu"
 $env:RUBIC_RL_MAX_STEPS="30"
 $env:RUBIC_RL_SEARCH_WIDTH="5"
 $env:RUBIC_RL_SEARCH_TOP_K="5"
@@ -38,6 +40,25 @@ cd backend
 Use a wider beam or larger top-K when solve quality matters more than latency.
 Keep both small for interactive demos unless the search benchmark shows the
 extra solve rate is worth the added latency.
+
+For Torch policy/value checkpoints, set `RUBIC_RL_MODEL_PATH` to the `.pt`
+checkpoint and `RUBIC_RL_POLICY_TYPE=torch`. Keep `RUBIC_RL_POLICY_DEVICE=cpu`
+unless the backend runtime has a working CUDA PyTorch install.
+
+## Runtime Status
+
+`GET /solve/rl/status` reports the configured RL runtime without solving a cube:
+model path, checkpoint name, checkpoint existence, configured and effective
+policy type, device, loaded state, last load error, and search settings.
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/solve/rl/status
+Invoke-RestMethod "http://127.0.0.1:8000/solve/rl/status?load=true"
+```
+
+The default check is lightweight and does not load the policy. Use `?load=true`
+for deployment verification because it forces the configured checkpoint to load
+and returns Torch metadata such as the checkpoint model version when available.
 
 ## Search Benchmark
 
@@ -58,8 +79,8 @@ to inspect individual successes and failures.
 
 The static frontend renders the `/solve/rl` `details` payload as an RL decision
 panel. The panel shows model version/checkpoint metadata, search strategy,
-depth, expanded and visited states, beam width, Top-K size, current cube
-stickers, and each selected move with Top-K confidence bars.
+policy type/device, depth, expanded and visited states, beam width, Top-K size,
+current cube stickers, and each selected move with Top-K confidence bars.
 
 During replay, the active decision step is highlighted in the trace and the
 affected cube layer is outlined in the 3D viewport. This is the first
@@ -84,7 +105,7 @@ endpoints plus `solver: "rl"` or `solver_mode: "rl"`. The stream emits:
 
 - `started` with session, solver, status, and initial stickers.
 - `decision` with selected move, confidence, Top-K candidates, search metrics,
-  model metadata, and the cube stickers before the move.
+  model and policy metadata, and the cube stickers before the move.
 - `move` with the applied move and resulting stickers.
 - `completed` with the normal solver result payload and replay package.
 
@@ -99,7 +120,8 @@ cube and falls back to the REST `/solve/rl` response.
 
 - schema version, session id, creation timestamp, solver status, duration, and moves.
 - initial and final cube snapshots with validation details.
-- model version/checkpoint, search metrics, and bounded branch trace records.
+- model version/checkpoint, policy type/device, search metrics, and bounded
+  branch trace records.
 - per-step before/after stickers plus decision confidence and Top-K candidates.
 - the original solver result payload for API compatibility.
 

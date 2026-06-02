@@ -29,6 +29,8 @@ class RLSolver:
         search_width: int | None = None,
         search_top_k: int | None = None,
         search_trace_limit: int | None = None,
+        policy_type: str | None = None,
+        policy_device: str | None = None,
         policy: PredictsActions | None = None,
     ):
         self.model_path = self._resolve_model_path(model_path)
@@ -36,7 +38,10 @@ class RLSolver:
         self.search_width = self._resolve_search_width(search_width)
         self.search_top_k = self._resolve_search_top_k(search_top_k)
         self.search_trace_limit = self._resolve_search_trace_limit(search_trace_limit)
+        self.policy_type = self._resolve_policy_type(policy_type)
+        self.policy_device = self._resolve_policy_device(policy_device)
         self._policy = policy
+        self._loaded_policy_type: str | None = _policy_type_from_loaded_policy(policy)
         self._load_error: str | None = None
 
     @classmethod
@@ -47,6 +52,8 @@ class RLSolver:
             search_width=_int_from_env("RUBIC_RL_SEARCH_WIDTH"),
             search_top_k=_int_from_env("RUBIC_RL_SEARCH_TOP_K"),
             search_trace_limit=_int_from_env("RUBIC_RL_SEARCH_TRACE_LIMIT"),
+            policy_type=os.environ.get("RUBIC_RL_POLICY_TYPE"),
+            policy_device=os.environ.get("RUBIC_RL_POLICY_DEVICE"),
         )
 
     def solve(self, cube: Cube) -> SolverResult:
@@ -108,12 +115,52 @@ class RLSolver:
         try:
             from rubic_rl.policies import load_policy
 
-            self._policy = load_policy(self.model_path, policy_type="auto")
+            self._policy = load_policy(
+                self.model_path,
+                policy_type=self.policy_type,
+                torch_map_location=self.policy_device,
+            )
+            self._loaded_policy_type = _policy_type_from_loaded_policy(self._policy)
             self._load_error = None
             return self._policy
         except Exception as error:
             self._load_error = f"RL policy checkpoint could not be loaded: {error}"
             return None
+
+    def runtime_status(self, *, load_policy: bool = False) -> dict[str, object]:
+        if load_policy:
+            self._get_policy()
+
+        checkpoint_exists = (
+            self.model_path.exists() if self.model_path is not None else None
+        )
+        loaded = self._policy is not None
+        runtime_state = self._runtime_state(checkpoint_exists)
+        return {
+            "solver": self.name,
+            "status": runtime_state,
+            "ready": loaded,
+            "available": runtime_state in {"loaded", "checkpoint_available"},
+            "configured": self.model_path is not None or loaded,
+            "loaded": loaded,
+            "model_path": str(self.model_path) if self.model_path else None,
+            "model_checkpoint": (
+                self.model_path.name if self.model_path else "in-memory-policy"
+            ),
+            "checkpoint_exists": checkpoint_exists,
+            "model_version": self._model_version(),
+            "configured_policy_type": self.policy_type,
+            "policy_type": self._effective_policy_type(),
+            "policy_device": self.policy_device,
+            "load_error": self._load_error,
+            "search": {
+                "strategy": "policy-guided-beam-search",
+                "max_depth": self.max_steps,
+                "beam_width": self.search_width,
+                "top_k": self.search_top_k,
+                "trace_limit": self.search_trace_limit,
+            },
+        }
 
     def _result(
         self,
@@ -178,11 +225,37 @@ class RLSolver:
             raise ValueError("search_trace_limit cannot be negative")
         return limit
 
+    @staticmethod
+    def _resolve_policy_type(value: str | None) -> str:
+        policy_type = (
+            "auto"
+            if value is None or str(value).strip() == ""
+            else str(value).strip().lower()
+        )
+        if policy_type not in {"auto", "linear", "mlp", "torch"}:
+            raise ValueError("policy_type must be one of auto, linear, mlp, or torch")
+        return policy_type
+
+    @staticmethod
+    def _resolve_policy_device(value: str | None) -> str:
+        device = (
+            "cpu"
+            if value is None or str(value).strip() == ""
+            else str(value).strip()
+        )
+        if not device:
+            raise ValueError("policy_device cannot be empty")
+        return device
+
     def _search_details(self, result: SearchResult) -> dict[str, object]:
         return {
             "strategy": "policy-guided-beam-search",
-            "model_version": self.model_path.stem if self.model_path else "in-memory-policy",
-            "model_checkpoint": self.model_path.name if self.model_path else "in-memory-policy",
+            "model_version": self._model_version(),
+            "model_checkpoint": (
+                self.model_path.name if self.model_path else "in-memory-policy"
+            ),
+            "policy_type": self._effective_policy_type(),
+            "policy_device": self.policy_device,
             "max_depth": self.max_steps,
             "beam_width": self.search_width,
             "top_k": self.search_top_k,
@@ -235,6 +308,33 @@ class RLSolver:
             ],
         }
 
+    def _model_version(self) -> str:
+        policy_version = getattr(self._policy, "model_version", None)
+        if policy_version not in {None, ""}:
+            return str(policy_version)
+        if self.model_path is not None:
+            return self.model_path.stem
+        return "in-memory-policy"
+
+    def _effective_policy_type(self) -> str:
+        if self._loaded_policy_type is not None:
+            return self._loaded_policy_type
+        if self.policy_type != "auto":
+            return self.policy_type
+        detected = _policy_type_from_path(self.model_path)
+        return detected or "auto"
+
+    def _runtime_state(self, checkpoint_exists: bool | None) -> str:
+        if self._policy is not None:
+            return "loaded"
+        if self._load_error is not None:
+            return "load_failed"
+        if self.model_path is None:
+            return "unconfigured"
+        if checkpoint_exists:
+            return "checkpoint_available"
+        return "missing_checkpoint"
+
 
 def _predict_action(policy: PredictsActions, cube: Cube) -> int:
     return predict_top_action(policy, cube)
@@ -249,3 +349,31 @@ def _int_from_env(name: str) -> int | None:
     if value is None or value.strip() == "":
         return None
     return int(value)
+
+
+def _policy_type_from_loaded_policy(policy: object) -> str | None:
+    if policy is None:
+        return None
+    raw_policy_type = getattr(policy, "policy_type", None)
+    if raw_policy_type not in {None, ""}:
+        return str(raw_policy_type)
+
+    class_name = policy.__class__.__name__
+    if class_name == "TorchPolicyValuePolicy":
+        return "torch"
+    if class_name == "MLPPolicy":
+        return "mlp"
+    if class_name == "LinearPolicy":
+        return "linear"
+    return "in-memory"
+
+
+def _policy_type_from_path(path: Path | None) -> str | None:
+    if path is None:
+        return None
+    suffix = path.suffix.lower()
+    if suffix in {".pt", ".pth"}:
+        return "torch"
+    if suffix == ".npz":
+        return "numpy"
+    return None

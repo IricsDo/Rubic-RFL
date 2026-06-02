@@ -1,6 +1,6 @@
 # Phase 11 Deployment
 
-Phase 11 makes the current MVP reproducible in containers. The stack runs the static frontend, FastAPI backend, PostgreSQL, and Redis with named volumes for durable local state. An optional monitoring profile adds Prometheus and Grafana.
+Phase 11 makes the current MVP reproducible in containers. The stack runs the static frontend, FastAPI backend, PostgreSQL, and Redis with named volumes for durable local state. Optional monitoring profiles add Prometheus and Grafana in local and production Compose.
 
 ## Services
 
@@ -58,7 +58,22 @@ Grafana loads the `Rubic RFL Overview` dashboard automatically from
 
 ## RL Checkpoints
 
-The backend mounts `./checkpoints` as `/models`. Set `RUBIC_RL_MODEL_FILE` in `.env` to the checkpoint filename to use for RL solving. If the file is missing, classical solving remains available and RL solving reports an unavailable checkpoint.
+The backend mounts `./checkpoints` as `/models`. Set `RUBIC_RL_MODEL_FILE` in
+`.env` to the checkpoint filename to use for RL solving, and keep
+`RUBIC_RL_POLICY_TYPE=auto` for normal `.npz` policies. For `.pt` Torch
+checkpoints, set `RUBIC_RL_POLICY_TYPE=torch` and use an image/runtime with
+PyTorch installed. `RUBIC_RL_POLICY_DEVICE` defaults to `cpu`; use `cuda` only
+with a CUDA-capable backend runtime. If the file is missing, classical solving
+remains available and RL solving reports an unavailable checkpoint.
+
+After the backend is healthy, verify the configured RL checkpoint:
+
+```powershell
+Invoke-RestMethod "http://127.0.0.1:8000/solve/rl/status?load=true"
+```
+
+The response should show `status` as `loaded`, `checkpoint_exists` as `true`,
+and `load_error` as `null`.
 
 ## Persistence
 
@@ -103,17 +118,51 @@ manually or when a `v*` tag is pushed.
 For a single VPS or VM deployment:
 
 ```powershell
-Copy-Item deploy\production.env.example deploy\production.env
+.\.venv\Scripts\python.exe tools\prepare_production_env.py --generate-secrets --force
 docker compose -f deploy\compose.production.yml --env-file deploy\production.env up -d
 ```
 
-Edit `deploy\production.env` before deployment with real GHCR image names,
-a strong PostgreSQL password, public ports, and checkpoint settings. Put a TLS
-reverse proxy in front of the frontend and backend before exposing the service.
+Use `--image-namespace ghcr.io/<owner>/<repo> --image-tag <sha>` when the
+deployment host is not checked out at the exact published revision. Edit
+`deploy\production.env` only for public ports, checkpoint settings, or managed
+service connection details. Use immutable image tags from the publish workflow
+rather than `:latest` for production rollouts.
+
+Validate release settings before starting the stack:
+
+```powershell
+.\.venv\Scripts\python.exe tools\verify_deployment.py --env-file deploy\production.env --strict --require-model-file
+docker compose -f deploy\compose.production.yml --env-file deploy\production.env config
+docker compose -f deploy\compose.production.yml --env-file deploy\production.env --profile monitoring config
+```
+
+To include Prometheus and Grafana in a single-host production deployment, add
+the monitoring profile:
+
+```powershell
+docker compose -f deploy\compose.production.yml --env-file deploy\production.env --profile monitoring up -d
+```
+
+Put a TLS reverse proxy in front of the frontend, backend, and any exposed
+monitoring UI before exposing the service.
+
+## Production Smoke Checks
+
+After deployment, run:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health
+Invoke-RestMethod "http://127.0.0.1:8000/solve/rl/status?load=true"
+.\.venv\Scripts\python.exe tools\load_test_network.py --base-url http://127.0.0.1:8000 --requests 60 --concurrency 6 --warmups 6 --out reports\network-load-smoke.json --enforce-budgets
+```
+
+When monitoring is enabled, open Grafana and confirm the Rubic RFL dashboard is
+receiving HTTP, WebSocket, solver, latency, and model-version metrics.
 
 ## CI
 
 `.github/workflows/test.yml` keeps Python tests and performance smoke
 benchmarks, validates the default Compose file, monitoring profile, host-port
-override, production Compose file, and Prometheus rules, then builds both Docker
-images.
+override, production Compose file, production monitoring profile, deployment env
+schema, and Prometheus rules, then builds both Docker images and runs an
+external Docker/Uvicorn network smoke test.

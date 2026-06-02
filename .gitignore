@@ -57,10 +57,17 @@ reports/htmlcov/
 reports/.coverage
 reports/coverage.xml
 reports/coverage.json
+reports/published-images.env
 reports/*-smoke.json
+datasets/adi-*.jsonl
+checkpoints/torch-policy-value-*.pt
+reports/adi-*.json
+reports/*adi*.json
+reports/mlp-search-evaluation-depth-*.json
 .tmp/
 rl/.tmp/
 replays/sessions/
+rl/tests/generated/adi-training/
 
 # Translations
 *.mo
@@ -140,6 +147,7 @@ celerybeat.pid
 
 # Environments
 .env
+deploy/production.env
 .venv
 env/
 venv/
@@ -184,6 +192,7 @@ cython_debug/
 # Node / Playwright
 node_modules/
 playwright-report/
+reports/playwright-results/
 test-results/
 
 # PyPI configuration file

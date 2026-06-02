@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.cube import Cube
 from app.solvers import RLSolver
+from app.solvers.rl_policy import RL_ACTION_MOVES
 from app.storage import ReplaySessionStore
 from app.main import app
 import app.main as main_module
@@ -33,6 +34,35 @@ class ApiTests(unittest.TestCase):
     def tearDown(self):
         main_module.session_store = self.original_session_store
         main_module.metrics.reset()
+
+    def _write_torch_policy_checkpoint(self, checkpoint_path: Path, move: str) -> None:
+        try:
+            import torch
+            from rubic_rl.models.policy_value import (
+                CheckpointMetadata,
+                RubiksPolicyValueNet,
+                TorchModelConfig,
+                save_policy_value_checkpoint,
+            )
+        except (ImportError, ModuleNotFoundError) as error:
+            self.skipTest(
+                f"PyTorch policy/value checkpoint support is unavailable: {error}"
+            )
+
+        model = RubiksPolicyValueNet(
+            TorchModelConfig(hidden_dim=32, residual_blocks=0)
+        )
+        preferred_action = RL_ACTION_MOVES.index(move)
+        with torch.no_grad():
+            for parameter in model.parameters():
+                parameter.zero_()
+            model.policy_head.bias[preferred_action] = 8.0
+
+        save_policy_value_checkpoint(
+            checkpoint_path,
+            model=model,
+            metadata=CheckpointMetadata(model_version="torch-backend-test-v1"),
+        )
 
     def test_health_endpoint(self):
         response = self.client.get("/health")
@@ -176,6 +206,97 @@ class ApiTests(unittest.TestCase):
         solved = scrambled.apply_sequence(payload["moves"], record_history=False)
         self.assertTrue(solved.is_solved())
 
+    def test_rl_status_reports_missing_checkpoint_without_loading(self):
+        missing_path = self.store_dir / "missing-status-policy.npz"
+        original_solver = main_module.rl_solver
+        main_module.rl_solver = RLSolver(
+            model_path=missing_path,
+            max_steps=7,
+            search_width=3,
+            search_top_k=2,
+            search_trace_limit=11,
+            policy_type="mlp",
+            policy_device="cpu",
+        )
+        try:
+            response = self.client.get("/solve/rl/status")
+        finally:
+            main_module.rl_solver = original_solver
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["solver"], "rl-policy")
+        self.assertEqual(payload["status"], "missing_checkpoint")
+        self.assertFalse(payload["ready"])
+        self.assertFalse(payload["available"])
+        self.assertFalse(payload["loaded"])
+        self.assertFalse(payload["checkpoint_exists"])
+        self.assertIsNone(payload["load_error"])
+        self.assertEqual(payload["model_checkpoint"], "missing-status-policy.npz")
+        self.assertEqual(payload["model_version"], "missing-status-policy")
+        self.assertEqual(payload["configured_policy_type"], "mlp")
+        self.assertEqual(payload["policy_type"], "mlp")
+        self.assertEqual(payload["policy_device"], "cpu")
+        self.assertEqual(payload["search"]["max_depth"], 7)
+        self.assertEqual(payload["search"]["beam_width"], 3)
+        self.assertEqual(payload["search"]["top_k"], 2)
+        self.assertEqual(payload["search"]["trace_limit"], 11)
+
+    def test_rl_status_reports_loaded_in_memory_policy(self):
+        original_solver = main_module.rl_solver
+        main_module.rl_solver = RLSolver(
+            policy=ConstantPolicy(9),
+            model_path="in-memory-status-policy",
+            max_steps=1,
+        )
+        try:
+            response = self.client.get("/solve/rl/status")
+        finally:
+            main_module.rl_solver = original_solver
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "loaded")
+        self.assertTrue(payload["ready"])
+        self.assertTrue(payload["available"])
+        self.assertTrue(payload["loaded"])
+        self.assertFalse(payload["checkpoint_exists"])
+        self.assertEqual(payload["model_checkpoint"], "in-memory-status-policy")
+        self.assertEqual(payload["model_version"], "in-memory-status-policy")
+        self.assertEqual(payload["policy_type"], "in-memory")
+
+    def test_rl_status_can_load_torch_checkpoint_metadata(self):
+        checkpoint_path = self.store_dir / "torch-status-policy.pt"
+        self._write_torch_policy_checkpoint(checkpoint_path, "R'")
+
+        original_solver = main_module.rl_solver
+        main_module.rl_solver = RLSolver(
+            model_path=checkpoint_path,
+            max_steps=1,
+            search_width=1,
+            search_top_k=1,
+            policy_type="torch",
+            policy_device="cpu",
+        )
+        try:
+            response = self.client.get("/solve/rl/status?load=true")
+        finally:
+            main_module.rl_solver = original_solver
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "loaded")
+        self.assertTrue(payload["ready"])
+        self.assertTrue(payload["available"])
+        self.assertTrue(payload["loaded"])
+        self.assertTrue(payload["checkpoint_exists"])
+        self.assertIsNone(payload["load_error"])
+        self.assertEqual(payload["model_checkpoint"], "torch-status-policy.pt")
+        self.assertEqual(payload["model_version"], "torch-backend-test-v1")
+        self.assertEqual(payload["configured_policy_type"], "torch")
+        self.assertEqual(payload["policy_type"], "torch")
+        self.assertEqual(payload["policy_device"], "cpu")
+
     def test_metrics_endpoint_exposes_solver_run_metrics(self):
         original_solver = main_module.rl_solver
         main_module.rl_solver = RLSolver(
@@ -242,6 +363,8 @@ class ApiTests(unittest.TestCase):
         self.assertTrue(payload["initial_state"]["validation"]["valid"])
         self.assertTrue(payload["final_state"]["is_solved"])
         self.assertEqual(payload["model"]["version"], "in-memory-replay-policy")
+        self.assertEqual(payload["model"]["policy_type"], "in-memory")
+        self.assertEqual(payload["model"]["device"], "cpu")
         self.assertEqual(payload["search"]["strategy"], "policy-guided-beam-search")
         self.assertEqual(payload["search"]["trace"]["trace_limit"], 200)
         self.assertFalse(payload["search"]["trace"]["truncated"])
@@ -260,6 +383,48 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(step["decision"]["confidence"], 1.0)
         self.assertEqual(step["decision"]["top_candidates"][0]["move"], "R'")
         self.assertEqual(payload["solver_result"]["moves"], ["R'"])
+
+    def test_rl_replay_package_loads_torch_checkpoint_metadata(self):
+        checkpoint_path = self.store_dir / "torch-policy.pt"
+        self._write_torch_policy_checkpoint(checkpoint_path, "R'")
+
+        original_solver = main_module.rl_solver
+        main_module.rl_solver = RLSolver(
+            model_path=checkpoint_path,
+            max_steps=1,
+            search_width=1,
+            search_top_k=1,
+            policy_type="torch",
+            policy_device="cpu",
+        )
+        scrambled = Cube.solved().apply_move("R")
+        try:
+            response = self.client.post(
+                "/solve/rl/replay-package",
+                json={
+                    "session_id": "torch-replay-test",
+                    "stickers": scrambled.to_string(),
+                },
+            )
+        finally:
+            main_module.rl_solver = original_solver
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "solved")
+        self.assertEqual(payload["moves"], ["R'"])
+        self.assertEqual(payload["model"]["version"], "torch-backend-test-v1")
+        self.assertEqual(payload["model"]["checkpoint"], "torch-policy.pt")
+        self.assertEqual(payload["model"]["policy_type"], "torch")
+        self.assertEqual(payload["model"]["device"], "cpu")
+        self.assertEqual(payload["search"]["beam_width"], 1)
+        self.assertEqual(payload["search"]["top_k"], 1)
+
+        details = payload["solver_result"]["details"]
+        self.assertEqual(details["model_version"], "torch-backend-test-v1")
+        self.assertEqual(details["model_checkpoint"], "torch-policy.pt")
+        self.assertEqual(details["policy_type"], "torch")
+        self.assertEqual(details["policy_device"], "cpu")
 
     def test_replay_package_is_persisted_and_listed_by_session_id(self):
         original_solver = main_module.rl_solver

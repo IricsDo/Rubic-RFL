@@ -12,6 +12,7 @@ The first milestone focuses on a working MVP foundation:
 - Deterministic JSONL and canonical short-depth dataset generators for supervised RL warm-start data.
 - NumPy supervised baseline policy for predicting the next solving action.
 - NumPy MLP supervised baseline for nonlinear next-action prediction.
+- Optional PyTorch residual policy/value baseline with checkpoint metadata.
 - Policy evaluation rollouts that report solve rates by scramble depth.
 - Policy comparison reports for ranking checkpoints on identical scrambles.
 - One-command baseline experiment runner for dataset, training, comparison, and reporting.
@@ -62,6 +63,14 @@ Install RL research dependencies:
 ```powershell
 cd rl
 python -m pip install -e ".[dev]"
+cd ..
+```
+
+Install optional PyTorch training dependencies:
+
+```powershell
+cd rl
+python -m pip install -e ".[torch,dev]"
 cd ..
 ```
 
@@ -134,11 +143,12 @@ Run the concurrent backend load smoke test:
 The CI workflow in `.github/workflows/test.yml` installs both Python packages,
 runs backend, PostgreSQL integration, frontend static smoke, and RL tests,
 writes combined backend/RL coverage XML and JSON reports, executes API,
-WebSocket, backend load, and frontend FPS smoke checks, and uploads the
-generated report files as artifacts. It also validates the Docker Compose
-configuration, monitoring profile, host-port override, production Compose
-baseline, and Prometheus rules, builds the backend and frontend images, and
-runs Playwright Chromium E2E tests against the static UI.
+WebSocket, backend load, external network load, and frontend FPS smoke checks,
+and uploads the generated report files as artifacts. It also validates the
+Docker Compose configuration, monitoring profile, host-port override,
+production Compose baseline, production monitoring profile, deployment env
+schema, and Prometheus rules, builds the backend and frontend images, and runs
+Playwright Chromium E2E tests against the static UI.
 
 Run the containerized stack:
 
@@ -168,6 +178,13 @@ docker compose --profile monitoring up --build
 
 Prometheus is available at `http://127.0.0.1:9090`, and Grafana is available at
 `http://127.0.0.1:3000` with the credentials from `.env`.
+
+Validate a production env file before release:
+
+```powershell
+.\.venv\Scripts\python.exe tools\prepare_production_env.py --generate-secrets --force
+.\.venv\Scripts\python.exe tools\verify_deployment.py --env-file deploy\production.env --strict --require-model-file
+```
 
 Generate a small supervised dataset:
 
@@ -238,10 +255,25 @@ states, and writes ignored dataset, checkpoint, and report files under
 `datasets/`, `checkpoints/`, and `reports/`. The report includes the top-ranked
 checkpoint path to use with the backend.
 
+Train the optional PyTorch ADI-style policy/value baseline:
+
+```powershell
+cd rl
+..\.venv\Scripts\python.exe -m rubic_rl.training.adi --depths 1 2 3 --samples-per-depth 100 --iterations 1 --epochs-per-iteration 5 --seed 20260531
+cd ..
+```
+
+This writes `checkpoints/torch-policy-value-adi.pt` plus
+`reports/adi-training.json`. The backend can consume `.npz` policies and `.pt`
+Torch policy/value checkpoints; install the Torch extra before serving a `.pt`
+checkpoint. See `docs/stage-2-adi-policy-value-training.md`.
+
 Run the FastAPI backend:
 
 ```powershell
 $env:RUBIC_RL_MODEL_PATH="checkpoints\mlp-baseline-depth-1-2-3.npz"
+$env:RUBIC_RL_POLICY_TYPE="auto"
+$env:RUBIC_RL_POLICY_DEVICE="cpu"
 $env:RUBIC_RL_MAX_STEPS="30"
 $env:RUBIC_RL_SEARCH_WIDTH="5"
 $env:RUBIC_RL_SEARCH_TOP_K="5"
@@ -250,6 +282,23 @@ $env:RUBIC_SESSION_DATABASE_URL="postgresql://postgres:admin@localhost:5432/rubi
 cd backend
 ..\.venv\Scripts\uvicorn.exe app.main:app --reload
 ```
+
+For the regularized Torch baseline, set `RUBIC_RL_MODEL_PATH` to
+`checkpoints\torch-policy-value-adi-depth-1-10-regularized.pt` and use
+`RUBIC_RL_POLICY_TYPE=torch`. Keep `RUBIC_RL_POLICY_DEVICE=cpu` for portable
+serving, or set it to `cuda` only when the runtime has a working CUDA PyTorch
+install.
+
+Check the configured RL runtime before solving:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/solve/rl/status
+Invoke-RestMethod "http://127.0.0.1:8000/solve/rl/status?load=true"
+```
+
+The first call reports checkpoint existence and current loaded state. The
+`?load=true` call force-loads the policy and is the preferred deployment smoke
+check for `.npz` and `.pt` checkpoints.
 
 In a second terminal, serve the frontend locally:
 

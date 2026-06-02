@@ -29,6 +29,9 @@ Run backend tests from the repository root:
 - `.\.venv\Scripts\python.exe tools\benchmark_api.py --iterations 10 --warmups 2 --out reports\performance-smoke.json` records API p95 smoke metrics.
 - `.\.venv\Scripts\python.exe tools\benchmark_websocket.py --iterations 10 --warmups 2 --out reports\websocket-performance-smoke.json` records WebSocket streaming p95 smoke metrics.
 - `.\.venv\Scripts\python.exe tools\load_test_backend.py --requests 60 --concurrency 6 --warmups 6 --out reports\backend-load-smoke.json` records concurrent mixed-route backend load metrics.
+- `.\.venv\Scripts\python.exe tools\load_test_network.py --base-url http://127.0.0.1:8000 --requests 60 --concurrency 6 --warmups 6 --out reports\network-load-smoke.json` records external HTTP load metrics against a running backend, usually Docker/Uvicorn.
+- `.\.venv\Scripts\python.exe tools\prepare_production_env.py --generate-secrets --force` writes ignored `deploy/production.env` with immutable image tags and generated local secrets.
+- `.\.venv\Scripts\python.exe tools\verify_deployment.py --env-file deploy\production.env --strict --require-model-file` validates production env values before a release.
 - `docker compose up --build` starts the containerized frontend, backend, PostgreSQL, and Redis stack.
 - `docker compose -f docker-compose.yml -f docker-compose.host-ports.yml up --build` additionally exposes PostgreSQL on `127.0.0.1:5433` for host-side database inspection.
 - `docker compose --profile monitoring up --build` starts the same stack plus Prometheus and Grafana.

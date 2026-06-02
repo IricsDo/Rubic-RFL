@@ -163,6 +163,8 @@ def _decision_event(
         "estimated_distance_to_solution": max(total_moves - step + 1, 0),
         "model_version": details.get("model_version"),
         "model_checkpoint": details.get("model_checkpoint"),
+        "policy_type": details.get("policy_type"),
+        "policy_device": details.get("policy_device"),
         "strategy": details.get("strategy"),
         "max_depth": details.get("max_depth"),
         "beam_width": details.get("beam_width"),
@@ -331,6 +333,16 @@ def solve_classical(payload: ReplayPackagePayload) -> dict[str, Any]:
         result_payload["session_id"] = stored_session["session_id"]
         result_payload["stored_session"] = stored_session
     return result_payload
+
+
+@app.get("/solve/rl/status")
+def rl_runtime_status(
+    load: bool = Query(
+        default=False,
+        description="Attempt to load the configured RL policy before reporting status.",
+    ),
+) -> dict[str, Any]:
+    return rl_solver.runtime_status(load_policy=load)
 
 
 @app.post("/solve/rl")

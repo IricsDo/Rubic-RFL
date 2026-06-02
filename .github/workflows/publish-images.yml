@@ -55,3 +55,17 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAMESPACE }}/frontend:${{ env.SHORT_SHA }}
             ${{ env.IMAGE_NAMESPACE }}/frontend:latest
+
+      - name: Write deployment image references
+        run: |
+          mkdir -p reports
+          {
+            echo "RUBIC_BACKEND_IMAGE=${IMAGE_NAMESPACE}/backend:${SHORT_SHA}"
+            echo "RUBIC_FRONTEND_IMAGE=${IMAGE_NAMESPACE}/frontend:${SHORT_SHA}"
+          } > reports/published-images.env
+
+      - name: Upload deployment image references
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-images
+          path: reports/published-images.env
