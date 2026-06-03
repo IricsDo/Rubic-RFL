@@ -1,0 +1,17 @@
+name: rubic-rfl
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip>=24
+  - setuptools>=68
+  - wheel
+  - numpy>=2.0
+  - pytorch>=2.3
+  - pytorch-cuda=12.1
+  - pip:
+      - -e ./backend[dev]
+      - -e ./rl[torch,dev]

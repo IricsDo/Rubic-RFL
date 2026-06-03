@@ -132,6 +132,39 @@ textarea {
   padding: 20px clamp(16px, 4vw, 40px);
 }
 
+.header-actions {
+  display: grid;
+  justify-items: end;
+  gap: 14px;
+  min-width: min(100%, 520px);
+}
+
+.language-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+  padding: 4px;
+}
+
+.language-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.language-toggle {
+  width: 112px;
+  background: var(--surface);
+}
+
+.language-toggle button {
+  min-height: 44px;
+}
+
 .eyebrow {
   margin: 0 0 2px;
   color: var(--muted);
@@ -166,6 +199,11 @@ h3 {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.status-strip {
+  justify-content: flex-end;
+  gap: 8px 10px;
 }
 
 .badge {
@@ -375,6 +413,58 @@ h3 {
   color: var(--muted);
   font-size: 14px;
   font-weight: 700;
+}
+
+.number-stepper {
+  display: grid;
+  grid-template-columns: 44px minmax(56px, 1fr) 44px;
+  align-items: stretch;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.number-stepper input {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+  padding: 10px 8px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  caret-color: transparent;
+  pointer-events: none;
+}
+
+.number-stepper input::-webkit-outer-spin-button,
+.number-stepper input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.number-stepper input[type="number"] {
+  appearance: textfield;
+}
+
+.stepper-button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface-strong);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.stepper-button:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.stepper-button:last-child {
+  border-left: 1px solid var(--border);
 }
 
 .button-row {
@@ -765,6 +855,15 @@ button.danger-action:hover {
   .workspace {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .header-actions {
+    justify-items: start;
+    min-width: 0;
+  }
+
+  .status-strip {
+    justify-content: flex-start;
   }
 
   .cube-panel {

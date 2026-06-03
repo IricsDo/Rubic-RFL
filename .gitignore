@@ -59,6 +59,7 @@ reports/coverage.xml
 reports/coverage.json
 reports/published-images.env
 reports/*-smoke.json
+reports/
 datasets/adi-*.jsonl
 checkpoints/torch-policy-value-*.pt
 reports/adi-*.json
@@ -67,6 +68,9 @@ reports/mlp-search-evaluation-depth-*.json
 .tmp/
 rl/.tmp/
 replays/sessions/
+backend/replays/sessions/
+backend/tests/.tmp-write-check/
+rl/tests/generated/
 rl/tests/generated/adi-training/
 
 # Translations
@@ -197,6 +201,10 @@ test-results/
 
 # PyPI configuration file
 .pypirc
+
+# Local AI/tool configuration
+.claude/
+CLAUDE.md
 
 # Cursor  
 #  Cursor is an AI-powered code editor.`.cursorignore` specifies files/directories to 

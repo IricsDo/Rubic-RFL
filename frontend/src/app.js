@@ -11,12 +11,330 @@ const AXIS_INDEX = { x: 0, y: 1, z: 2 };
 const SUFFIXES = ["", "'", "2"];
 const ALL_MOVES = FACE_ORDER.flatMap((face) => SUFFIXES.map((suffix) => face + suffix));
 const DEFAULT_API_BASE = "http://127.0.0.1:8000";
+const MIN_SCRAMBLE_DEPTH = 0;
+const MAX_SCRAMBLE_DEPTH = 30;
+const DEFAULT_LANGUAGE = "en";
+const SUPPORTED_LANGUAGES = new Set(["en", "vn"]);
+const LANGUAGE_NAMES = {
+  en: "English",
+  vn: "Tiếng Việt",
+};
+const LOCALES = {
+  en: undefined,
+  vn: "vi-VN",
+};
+const TRANSLATIONS = {
+  en: {
+    "document.title": "Rubic RFL Solver MVP",
+    "skip.workspace": "Skip to workspace",
+    "app.title": "Real-time Rubik's Cube Solver",
+    "language.label": "Language",
+    "language.switchEnglish": "Switch UI language to English",
+    "language.switchVietnamese": "Switch UI language to Vietnamese",
+    "section.cubeViewport": "Interactive cube viewport",
+    "section.cubeControls": "Cube controls",
+    "section.stateTimeline": "State and timeline",
+    "section.moves": "Moves",
+    "section.backend": "Backend",
+    "section.scramble": "Scramble",
+    "section.replay": "Replay",
+    "section.savedSessions": "Saved Sessions",
+    "section.moveTimeline": "Move Timeline",
+    "section.solution": "Solution",
+    "section.rlDecisionTrace": "RL Decision Trace",
+    "section.searchTrace": "Search Trace",
+    "section.moveSequence": "Move Sequence",
+    "section.stateJson": "State JSON",
+    "hint.viewport": "Drag the cube to rotate the camera.",
+    "label.apiBase": "API base URL",
+    "label.depth": "Depth",
+    "label.seed": "Seed",
+    "control.depthDecrease": "Decrease depth",
+    "control.depthIncrease": "Increase depth",
+    "label.solverMode": "Solver mode",
+    "label.replayProgress": "Replay progress",
+    "label.currentCubeState": "Current cube state",
+    "label.applyMoves": "Apply moves to current state",
+    "label.stateJson": "State or replay package JSON",
+    "button.resetView": "Reset View",
+    "button.checkApi": "Check API",
+    "button.scramble": "Scramble",
+    "button.reset": "Reset",
+    "button.classical": "Classical",
+    "button.solve": "Solve",
+    "button.play": "Play",
+    "button.pause": "Pause",
+    "button.stepBack": "Step Back",
+    "button.stepForward": "Step Forward",
+    "button.refresh": "Refresh",
+    "button.saveReplay": "Save Replay",
+    "button.applySequence": "Apply Sequence",
+    "button.export": "Export",
+    "button.exportReplay": "Export Replay",
+    "button.import": "Import",
+    "button.load": "Load",
+    "button.delete": "Delete",
+    "badge.apiUnchecked": "API unchecked",
+    "badge.apiOnline": "API online",
+    "badge.localMode": "Local mode",
+    "badge.valid": "Valid",
+    "badge.invalid": "Invalid",
+    "badge.solved": "Solved",
+    "badge.unsolved": "Unsolved",
+    "badge.moveCount": "{count} moves",
+    "saved.notLoaded": "Not loaded",
+    "saved.count": "{count} saved",
+    "saved.apiOffline": "API offline",
+    "saved.none": "No saved sessions.",
+    "saved.connectApi": "Connect the API to load history.",
+    "session.unknown": "unknown session",
+    "session.solver": "solver",
+    "session.status": "status",
+    "timeline.none": "None",
+    "time.unknown": "unknown time",
+    "rl.policySearch": "Policy search",
+    "rl.unknownModel": "unknown model",
+    "rl.noDecisionSteps": "No decision steps recorded.",
+    "metric.strategy": "Strategy",
+    "metric.depth": "Depth",
+    "metric.expanded": "Expanded",
+    "metric.visited": "Visited",
+    "metric.beam": "Beam",
+    "metric.topK": "Top-K",
+    "trace.records": "{count} records{capped}",
+    "trace.zeroRecords": "0 records",
+    "trace.capped": " capped",
+    "trace.noBranchRecords": "No branch records captured.",
+    "trace.root": "root",
+    "trace.score": "score {score}",
+    "traceOutcome.queued": "queued",
+    "traceOutcome.kept": "kept",
+    "traceOutcome.pruned": "pruned",
+    "traceOutcome.solution": "solution",
+    "traceOutcome.kept_in_beam": "kept in beam",
+    "traceOutcome.pruned_by_beam": "pruned by beam",
+    "traceOutcome.skipped_inverse": "skipped inverse",
+    "traceOutcome.skipped_visited": "skipped visited",
+    "move.applyAria": "Apply move {move}",
+    "message.ready": "Ready for a scramble.",
+    "message.generatingScramble": "Generating {depth}-move scramble...",
+    "message.preparingSolution": "Preparing solution...",
+    "message.playingPreparedSolution": "Solution ready. Playing {count} moves.",
+    "message.languageUpdated": "UI language changed to {language}.",
+    "message.rlStreamStarted": "RL stream started.",
+    "message.rlSelected": "RL selected {move}.",
+    "message.rlApplied": "RL applied move {step}: {move}.",
+    "message.backendConnected": "Backend API connected.",
+    "message.backendOffline": "Backend offline. Using local fallback. {error}",
+    "message.stateExported": "State exported.",
+    "message.noReplayForRl": "No replay package available. Solve with RL first.",
+    "message.replayExported": "Replay package exported.",
+    "message.replayComplete": "Replay complete.",
+    "message.appliedSolutionMove": "Applied solution move {index}: {move}",
+    "message.rewoundMove": "Rewound move {index}.",
+    "message.appliedMove": "Applied move {move}.",
+    "message.apiAppliedMove": "API applied move {move}.",
+    "message.appliedMoveLocal": "Applied move {move} locally.",
+    "message.replayImported": "Replay package imported.",
+    "message.loadSessionsFailed": "Could not load sessions. {error}",
+    "message.loadedSessions": "Loaded {count} saved sessions.",
+    "message.noReplayToSave": "No replay package available to save.",
+    "message.replaySaveFailed": "Replay could not be saved. {error}",
+    "message.savedReplay": "Saved replay {sessionId}.",
+    "message.loadSessionFailed": "Could not load session. {error}",
+    "message.deleteSessionFailed": "Could not delete session. {error}",
+    "message.deletedSession": "Deleted saved session {sessionId}.",
+    "message.stateImported": "State imported.",
+    "message.generatedScramble": "Generated {depth}-move scramble.",
+    "message.apiGeneratedScramble": "API generated {depth}-move scramble.",
+    "message.generatedScrambleLocal": "Generated {depth}-move scramble locally.",
+    "message.cubeReset": "Cube reset.",
+    "message.alreadySolved": "Cube is already solved.",
+    "message.openingRlStream": "Opening RL stream.",
+    "message.rlStreamSolved": "RL stream solved in {count} moves.",
+    "message.rlStreamNoSolution": "RL stream finished without a solution.",
+    "message.apiPreparedMoves": "API prepared {count} {solver} moves.",
+    "message.backendRlRequired": "Backend RL solver is required for RL replay.",
+    "message.backendSolverRequired": "Backend solver is required for imported states without move history.",
+    "message.preparedInverse": "Prepared {count} inverse-history moves locally.",
+    "message.classicalSelected": "Classical solver selected.",
+    "message.rlSolverSelected": "RL solver selected.",
+    "message.replayPaused": "Replay paused.",
+    "message.appliedSequence": "Applied {count} sequence moves.",
+    "message.apiAppliedSequence": "API applied {count} sequence moves.",
+    "message.localFallbackSequence": "Applied {count} sequence moves with local fallback.",
+    "message.stateImportedValidated": "State imported and validated by API.",
+    "message.apiUrlUpdated": "API URL updated.",
+    "error.replayStickers": "Replay package must contain 54 initial stickers.",
+    "error.importedStickers": "Imported stickers must contain 54 values.",
+  },
+  vn: {
+    "document.title": "MVP trình giải Rubic RFL",
+    "skip.workspace": "Đến khu làm việc",
+    "app.title": "Trình giải Rubik thời gian thực",
+    "language.label": "Ngôn ngữ",
+    "language.switchEnglish": "Chuyển giao diện sang tiếng Anh",
+    "language.switchVietnamese": "Chuyển giao diện sang tiếng Việt",
+    "section.cubeViewport": "Khung xem khối tương tác",
+    "section.cubeControls": "Điều khiển khối",
+    "section.stateTimeline": "Trạng thái và dòng thời gian",
+    "section.moves": "Nước đi",
+    "section.backend": "Backend",
+    "section.scramble": "Xáo trộn",
+    "section.replay": "Phát lại",
+    "section.savedSessions": "Phiên đã lưu",
+    "section.moveTimeline": "Dòng thời gian nước đi",
+    "section.solution": "Lời giải",
+    "section.rlDecisionTrace": "Nhật ký quyết định RL",
+    "section.searchTrace": "Nhật ký tìm kiếm",
+    "section.moveSequence": "Chuỗi nước đi",
+    "section.stateJson": "JSON trạng thái",
+    "hint.viewport": "Kéo khối để xoay góc nhìn.",
+    "label.apiBase": "URL gốc API",
+    "label.depth": "Độ sâu",
+    "label.seed": "Seed",
+    "control.depthDecrease": "Giảm độ sâu",
+    "control.depthIncrease": "Tăng độ sâu",
+    "label.solverMode": "Chế độ giải",
+    "label.replayProgress": "Tiến trình phát lại",
+    "label.currentCubeState": "Trạng thái khối hiện tại",
+    "label.applyMoves": "Áp dụng nước đi vào trạng thái hiện tại",
+    "label.stateJson": "JSON trạng thái hoặc gói phát lại",
+    "button.resetView": "Đặt lại góc nhìn",
+    "button.checkApi": "Kiểm tra API",
+    "button.scramble": "Xáo trộn",
+    "button.reset": "Đặt lại",
+    "button.classical": "Cổ điển",
+    "button.solve": "Giải",
+    "button.play": "Phát",
+    "button.pause": "Tạm dừng",
+    "button.stepBack": "Lùi bước",
+    "button.stepForward": "Tiến bước",
+    "button.refresh": "Tải lại",
+    "button.saveReplay": "Lưu phát lại",
+    "button.applySequence": "Áp dụng chuỗi",
+    "button.export": "Xuất",
+    "button.exportReplay": "Xuất phát lại",
+    "button.import": "Nhập",
+    "button.load": "Tải",
+    "button.delete": "Xóa",
+    "badge.apiUnchecked": "Chưa kiểm tra API",
+    "badge.apiOnline": "API trực tuyến",
+    "badge.localMode": "Chế độ cục bộ",
+    "badge.valid": "Hợp lệ",
+    "badge.invalid": "Không hợp lệ",
+    "badge.solved": "Đã giải",
+    "badge.unsolved": "Chưa giải",
+    "badge.moveCount": "{count} nước đi",
+    "saved.notLoaded": "Chưa tải",
+    "saved.count": "{count} đã lưu",
+    "saved.apiOffline": "API ngoại tuyến",
+    "saved.none": "Chưa có phiên đã lưu.",
+    "saved.connectApi": "Kết nối API để tải lịch sử.",
+    "session.unknown": "phiên không rõ",
+    "session.solver": "bộ giải",
+    "session.status": "trạng thái",
+    "timeline.none": "Không có",
+    "time.unknown": "thời gian không rõ",
+    "rl.policySearch": "Tìm kiếm chính sách",
+    "rl.unknownModel": "mô hình không rõ",
+    "rl.noDecisionSteps": "Chưa ghi nhận bước quyết định.",
+    "metric.strategy": "Chiến lược",
+    "metric.depth": "Độ sâu",
+    "metric.expanded": "Đã mở rộng",
+    "metric.visited": "Đã thăm",
+    "metric.beam": "Beam",
+    "metric.topK": "Top-K",
+    "trace.records": "{count} bản ghi{capped}",
+    "trace.zeroRecords": "0 bản ghi",
+    "trace.capped": " giới hạn",
+    "trace.noBranchRecords": "Chưa ghi nhận nhánh tìm kiếm.",
+    "trace.root": "gốc",
+    "trace.score": "điểm {score}",
+    "traceOutcome.queued": "đang chờ",
+    "traceOutcome.kept": "giữ lại",
+    "traceOutcome.pruned": "loại bỏ",
+    "traceOutcome.solution": "lời giải",
+    "traceOutcome.kept_in_beam": "giữ trong beam",
+    "traceOutcome.pruned_by_beam": "loại bởi beam",
+    "traceOutcome.skipped_inverse": "bỏ qua nghịch đảo",
+    "traceOutcome.skipped_visited": "bỏ qua đã thăm",
+    "move.applyAria": "Áp dụng nước đi {move}",
+    "message.ready": "Sẵn sàng xáo trộn.",
+    "message.generatingScramble": "Đang tạo xáo trộn {depth} nước...",
+    "message.preparingSolution": "Đang chuẩn bị lời giải...",
+    "message.playingPreparedSolution": "Đã chuẩn bị {count} nước. Đang phát lời giải.",
+    "message.languageUpdated": "Đã đổi ngôn ngữ giao diện sang {language}.",
+    "message.rlStreamStarted": "Luồng RL đã bắt đầu.",
+    "message.rlSelected": "RL đã chọn {move}.",
+    "message.rlApplied": "RL đã áp dụng nước {step}: {move}.",
+    "message.backendConnected": "Đã kết nối Backend API.",
+    "message.backendOffline": "Backend ngoại tuyến. Dùng chế độ cục bộ. {error}",
+    "message.stateExported": "Đã xuất trạng thái.",
+    "message.noReplayForRl": "Chưa có gói phát lại. Hãy giải bằng RL trước.",
+    "message.replayExported": "Đã xuất gói phát lại.",
+    "message.replayComplete": "Phát lại hoàn tất.",
+    "message.appliedSolutionMove": "Đã áp dụng nước giải {index}: {move}",
+    "message.rewoundMove": "Đã lùi về nước {index}.",
+    "message.appliedMove": "Đã áp dụng nước {move}.",
+    "message.apiAppliedMove": "API đã áp dụng nước {move}.",
+    "message.appliedMoveLocal": "Đã áp dụng nước {move} cục bộ.",
+    "message.replayImported": "Đã nhập gói phát lại.",
+    "message.loadSessionsFailed": "Không thể tải phiên. {error}",
+    "message.loadedSessions": "Đã tải {count} phiên đã lưu.",
+    "message.noReplayToSave": "Chưa có gói phát lại để lưu.",
+    "message.replaySaveFailed": "Không thể lưu phát lại. {error}",
+    "message.savedReplay": "Đã lưu phát lại {sessionId}.",
+    "message.loadSessionFailed": "Không thể tải phiên. {error}",
+    "message.deleteSessionFailed": "Không thể xóa phiên. {error}",
+    "message.deletedSession": "Đã xóa phiên đã lưu {sessionId}.",
+    "message.stateImported": "Đã nhập trạng thái.",
+    "message.generatedScramble": "Đã tạo xáo trộn {depth} nước.",
+    "message.apiGeneratedScramble": "API đã tạo xáo trộn {depth} nước.",
+    "message.generatedScrambleLocal": "Đã tạo xáo trộn {depth} nước cục bộ.",
+    "message.cubeReset": "Đã đặt lại khối.",
+    "message.alreadySolved": "Khối đã được giải.",
+    "message.openingRlStream": "Đang mở luồng RL.",
+    "message.rlStreamSolved": "Luồng RL đã giải trong {count} nước.",
+    "message.rlStreamNoSolution": "Luồng RL kết thúc nhưng chưa có lời giải.",
+    "message.apiPreparedMoves": "API đã chuẩn bị {count} nước bằng {solver}.",
+    "message.backendRlRequired": "Cần bộ giải RL backend để phát lại RL.",
+    "message.backendSolverRequired": "Cần bộ giải backend cho trạng thái nhập không có lịch sử nước đi.",
+    "message.preparedInverse": "Đã chuẩn bị {count} nước đảo lịch sử cục bộ.",
+    "message.classicalSelected": "Đã chọn bộ giải cổ điển.",
+    "message.rlSolverSelected": "Đã chọn bộ giải RL.",
+    "message.replayPaused": "Đã tạm dừng phát lại.",
+    "message.appliedSequence": "Đã áp dụng {count} nước trong chuỗi.",
+    "message.apiAppliedSequence": "API đã áp dụng {count} nước trong chuỗi.",
+    "message.localFallbackSequence": "Đã áp dụng {count} nước trong chuỗi với fallback cục bộ.",
+    "message.stateImportedValidated": "Đã nhập trạng thái và xác thực bằng API.",
+    "message.apiUrlUpdated": "Đã cập nhật URL API.",
+    "error.replayStickers": "Gói phát lại phải chứa 54 sticker ban đầu.",
+    "error.importedStickers": "Sticker nhập vào phải có 54 giá trị.",
+  },
+};
+
+function savedLanguage() {
+  const language = localStorage.getItem("rubic-rfl-language");
+  return SUPPORTED_LANGUAGES.has(language) ? language : DEFAULT_LANGUAGE;
+}
+
+let activeLanguage = savedLanguage();
+
+function t(key, params = {}, fallback = undefined) {
+  const template = TRANSLATIONS[activeLanguage]?.[key] ?? TRANSLATIONS.en[key] ?? fallback ?? key;
+  return template.replace(/\{([A-Za-z0-9_]+)\}/g, (_, name) => String(params[name] ?? ""));
+}
 
 const elements = {
   cube: document.querySelector("#cube"),
   cubeStage: document.querySelector("#cubeStage"),
   moveButtons: document.querySelector("#moveButtons"),
+  languageEnButton: document.querySelector("#languageEnButton"),
+  languageVnButton: document.querySelector("#languageVnButton"),
   depthInput: document.querySelector("#depthInput"),
+  depthDecreaseButton: document.querySelector("#depthDecreaseButton"),
+  depthIncreaseButton: document.querySelector("#depthIncreaseButton"),
   seedInput: document.querySelector("#seedInput"),
   scrambleButton: document.querySelector("#scrambleButton"),
   resetButton: document.querySelector("#resetButton"),
@@ -56,6 +374,39 @@ const elements = {
   rlSearchTraceBadge: document.querySelector("#rlSearchTraceBadge"),
   rlSearchTraceList: document.querySelector("#rlSearchTraceList"),
 };
+
+function translateMoveButtonLabels() {
+  elements.moveButtons.querySelectorAll("button[data-move]").forEach((button) => {
+    button.setAttribute("aria-label", t("move.applyAria", { move: button.dataset.move }));
+  });
+}
+
+function translateStaticUi() {
+  document.documentElement.lang = activeLanguage === "vn" ? "vi" : "en";
+  document.title = t("document.title");
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = t(element.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((element) => {
+    element.setAttribute("aria-label", t(element.dataset.i18nAriaLabel));
+  });
+  translateMoveButtonLabels();
+}
+
+function updateLanguageControls() {
+  elements.languageEnButton.setAttribute("aria-pressed", String(activeLanguage === "en"));
+  elements.languageVnButton.setAttribute("aria-pressed", String(activeLanguage === "vn"));
+}
+
+function setLanguage(language, options = {}) {
+  activeLanguage = SUPPORTED_LANGUAGES.has(language) ? language : DEFAULT_LANGUAGE;
+  localStorage.setItem("rubic-rfl-language", activeLanguage);
+  translateStaticUi();
+  updateLanguageControls();
+  if (options.render) {
+    updateUi(options.announce ? t("message.languageUpdated", { language: LANGUAGE_NAMES[activeLanguage] }) : undefined);
+  }
+}
 
 function key(position, normal) {
   return `${position.join(",")}|${normal.join(",")}`;
@@ -346,19 +697,19 @@ function requestRlSolveStream(payload, options = {}) {
           model_version: message.solver || "rl-policy",
           steps: [],
         };
-        updateUi("RL stream started.");
+        updateUi(t("message.rlStreamStarted"));
         return;
       }
 
       if (message.event === "decision") {
         applyRlDecisionEvent(message);
-        updateUi(`RL selected ${message.selected_move || "a move"}.`);
+        updateUi(t("message.rlSelected", { move: message.selected_move || "a move" }));
         return;
       }
 
       if (message.event === "move") {
         applyRlMoveEvent(message);
-        updateUi(`RL applied move ${message.step}: ${message.move}.`);
+        updateUi(t("message.rlApplied", { step: message.step, move: message.move }));
         return;
       }
 
@@ -408,11 +759,11 @@ async function checkBackend(announce = true) {
   const data = await tryBackend("/health", null, { method: "GET", timeout: 1200 });
   if (data?.status === "ok") {
     state.backendOnline = true;
-    if (announce) updateUi("Backend API connected.");
+    if (announce) updateUi(t("message.backendConnected"));
     return true;
   }
   state.backendOnline = false;
-  if (announce) updateUi(`Backend offline. Using local fallback. ${state.lastApiError || ""}`.trim());
+  if (announce) updateUi(t("message.backendOffline", { error: state.lastApiError || "" }).trim());
   return false;
 }
 
@@ -537,7 +888,7 @@ function renderTimeline(listElement, moves, activeIndex = -1) {
   listElement.innerHTML = "";
   if (!moves.length) {
     const item = document.createElement("li");
-    item.textContent = "None";
+    item.textContent = t("timeline.none");
     listElement.append(item);
     return;
   }
@@ -551,8 +902,8 @@ function renderTimeline(listElement, moves, activeIndex = -1) {
 
 function formatSessionTime(value) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "unknown time";
-  return date.toLocaleString([], {
+  if (Number.isNaN(date.getTime())) return t("time.unknown");
+  return date.toLocaleString(LOCALES[activeLanguage], {
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -562,14 +913,16 @@ function formatSessionTime(value) {
 
 function renderSavedSessions() {
   const sessions = Array.isArray(state.savedSessions) ? state.savedSessions : [];
-  const label = state.backendOnline ? `${sessions.length} saved` : "API offline";
+  const label = state.backendOnline
+    ? t("saved.count", { count: sessions.length })
+    : t("saved.apiOffline");
   setBadge(elements.savedSessionsBadge, label, state.backendOnline ? "info" : "");
   elements.savedSessionsList.innerHTML = "";
 
   if (!sessions.length) {
     const item = document.createElement("li");
     item.className = "session-empty";
-    item.textContent = state.backendOnline ? "No saved sessions." : "Connect the API to load history.";
+    item.textContent = state.backendOnline ? t("saved.none") : t("saved.connectApi");
     elements.savedSessionsList.append(item);
     return;
   }
@@ -583,12 +936,12 @@ function renderSavedSessions() {
     summary.className = "session-summary";
 
     const title = document.createElement("strong");
-    title.textContent = session.session_id || "unknown session";
+    title.textContent = session.session_id || t("session.unknown");
 
     const meta = document.createElement("span");
-    meta.textContent = `${session.solver || "solver"} | ${session.status || "status"} | ${
-      session.move_count || 0
-    } moves | ${formatSessionTime(session.created_at)}`;
+    meta.textContent = `${session.solver || t("session.solver")} | ${
+      session.status || t("session.status")
+    } | ${t("badge.moveCount", { count: session.move_count || 0 })} | ${formatSessionTime(session.created_at)}`;
 
     summary.append(title, meta);
 
@@ -597,12 +950,12 @@ function renderSavedSessions() {
 
     const loadButton = document.createElement("button");
     loadButton.type = "button";
-    loadButton.textContent = "Load";
+    loadButton.textContent = t("button.load");
     loadButton.addEventListener("click", () => loadSavedSession(session.session_id));
 
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
-    deleteButton.textContent = "Delete";
+    deleteButton.textContent = t("button.delete");
     deleteButton.className = "danger-action";
     deleteButton.addEventListener("click", () => deleteSavedSession(session.session_id));
 
@@ -651,7 +1004,8 @@ function appendMetric(label, value) {
 }
 
 function traceOutcomeLabel(outcome) {
-  return String(outcome || "queued").replaceAll("_", " ");
+  const normalized = String(outcome || "queued").replaceAll("-", "_");
+  return t(`traceOutcome.${normalized}`, {}, normalized.replaceAll("_", " "));
 }
 
 function isActiveTraceRecord(record) {
@@ -671,14 +1025,14 @@ function renderSearchTrace() {
   if (!trace) return;
 
   const records = Array.isArray(trace.records) ? trace.records : [];
-  const cappedText = trace.truncated ? " capped" : "";
-  elements.rlSearchTraceBadge.textContent = `${records.length} records${cappedText}`;
+  const cappedText = trace.truncated ? t("trace.capped") : "";
+  elements.rlSearchTraceBadge.textContent = t("trace.records", { count: records.length, capped: cappedText });
   elements.rlSearchTraceList.innerHTML = "";
 
   if (!records.length) {
     const item = document.createElement("li");
     item.className = "search-trace-record";
-    item.textContent = "No branch records captured.";
+    item.textContent = t("trace.noBranchRecords");
     elements.rlSearchTraceList.append(item);
     return;
   }
@@ -692,14 +1046,14 @@ function renderSearchTrace() {
     const header = document.createElement("div");
     header.className = "search-trace-header";
 
-    const path = Array.isArray(record.path) && record.path.length ? record.path.join(" ") : "root";
+    const path = Array.isArray(record.path) && record.path.length ? record.path.join(" ") : t("trace.root");
     const title = document.createElement("strong");
     title.className = "search-trace-title";
     title.textContent = `#${record.node_id || "?"} d${record.depth || 0} ${path}`;
 
     const score = document.createElement("span");
     score.className = "confidence-value";
-    score.textContent = `score ${formatScore(record.score)}`;
+    score.textContent = t("trace.score", { score: formatScore(record.score) });
 
     header.append(title, score);
     item.append(header);
@@ -749,24 +1103,24 @@ function renderRlDecisionPanel() {
     return;
   }
 
-  const modelVersion = details.model_version || details.model_checkpoint || "unknown model";
+  const modelVersion = details.model_version || details.model_checkpoint || t("rl.unknownModel");
   const strategy = String(details.strategy || "policy-guided search").replaceAll("-", " ");
   elements.rlStrategyBadge.textContent = modelVersion;
   elements.rlCurrentState.textContent = state.stickers.join("");
 
   elements.rlDecisionStats.innerHTML = "";
-  appendMetric("Strategy", strategy);
-  appendMetric("Depth", `${formatNumber(details.depth_reached)} / ${formatNumber(details.max_depth)}`);
-  appendMetric("Expanded", formatNumber(details.expanded_states));
-  appendMetric("Visited", formatNumber(details.visited_states));
-  appendMetric("Beam", formatNumber(details.beam_width));
-  appendMetric("Top-K", formatNumber(details.top_k));
+  appendMetric(t("metric.strategy"), strategy);
+  appendMetric(t("metric.depth"), `${formatNumber(details.depth_reached)} / ${formatNumber(details.max_depth)}`);
+  appendMetric(t("metric.expanded"), formatNumber(details.expanded_states));
+  appendMetric(t("metric.visited"), formatNumber(details.visited_states));
+  appendMetric(t("metric.beam"), formatNumber(details.beam_width));
+  appendMetric(t("metric.topK"), formatNumber(details.top_k));
 
   elements.rlDecisionList.innerHTML = "";
   if (!steps.length) {
     const item = document.createElement("li");
     item.className = "decision-step";
-    item.textContent = "No decision steps recorded.";
+    item.textContent = t("rl.noDecisionSteps");
     elements.rlDecisionList.append(item);
     renderSearchTrace();
     return;
@@ -826,7 +1180,14 @@ function renderRlDecisionPanel() {
 function stopPlayback() {
   if (state.playTimer) window.clearInterval(state.playTimer);
   state.playTimer = null;
-  elements.playButton.textContent = "Play";
+  elements.playButton.textContent = t("button.play");
+}
+
+function startPlayback() {
+  if (state.playTimer || !state.solution.length || state.replayIndex >= state.solution.length) return;
+  elements.playButton.textContent = t("button.pause");
+  state.playTimer = window.setInterval(stepForward, 520);
+  stepForward();
 }
 
 function updateSolverModeControls() {
@@ -836,22 +1197,32 @@ function updateSolverModeControls() {
 }
 
 function updateUi(message) {
+  if (message !== undefined) state.message = message;
   const localValidation = validateCounts(state.stickers);
   const validation = state.validation || localValidation;
+  const isBusy = Boolean(state.pendingAction);
   setBadge(
     elements.backendBadge,
-    state.backendOnline ? "API online" : "Local mode",
+    state.backendOnline ? t("badge.apiOnline") : t("badge.localMode"),
     state.backendOnline ? "info" : ""
   );
-  setBadge(elements.validityBadge, validation.valid ? "Valid" : "Invalid", validation.valid ? "ok" : "warn");
-  setBadge(elements.solvedBadge, isSolved(state.stickers) ? "Solved" : "Unsolved", isSolved(state.stickers) ? "ok" : "");
-  setBadge(elements.moveCountBadge, `${state.history.length} moves`, "");
+  setBadge(
+    elements.validityBadge,
+    validation.valid ? t("badge.valid") : t("badge.invalid"),
+    validation.valid ? "ok" : "warn"
+  );
+  setBadge(
+    elements.solvedBadge,
+    isSolved(state.stickers) ? t("badge.solved") : t("badge.unsolved"),
+    isSolved(state.stickers) ? "ok" : ""
+  );
+  setBadge(elements.moveCountBadge, t("badge.moveCount", { count: state.history.length }), "");
 
   const progress = state.solution.length
     ? Math.round((state.replayIndex / state.solution.length) * 100)
     : 0;
   elements.progressBar.style.width = `${progress}%`;
-  elements.solverStatus.textContent = message || state.message;
+  elements.solverStatus.textContent = state.message;
   renderTimeline(elements.historyList, state.history);
   renderTimeline(elements.solutionList, state.solution, state.replayIndex);
   renderRlDecisionPanel();
@@ -861,11 +1232,25 @@ function updateUi(message) {
   exportState(false);
 
   const hasSolution = state.solution.length > 0;
-  elements.stepForwardButton.disabled = !hasSolution || state.replayIndex >= state.solution.length;
-  elements.stepBackButton.disabled = !hasSolution || state.replayIndex <= 0;
-  elements.playButton.disabled = !hasSolution || state.replayIndex >= state.solution.length;
+  elements.moveButtons.querySelectorAll("button").forEach((button) => {
+    button.disabled = isBusy;
+  });
+  elements.scrambleButton.disabled = isBusy;
+  elements.resetButton.disabled = isBusy;
+  elements.solveButton.disabled = isBusy;
+  elements.classicalModeButton.disabled = isBusy;
+  elements.rlModeButton.disabled = isBusy;
+  elements.applySequenceButton.disabled = isBusy;
+  elements.importButton.disabled = isBusy;
+  elements.stepForwardButton.disabled = isBusy || !hasSolution || state.replayIndex >= state.solution.length;
+  elements.stepBackButton.disabled = isBusy || !hasSolution || state.replayIndex <= 0;
+  elements.playButton.disabled = isBusy || !hasSolution || state.replayIndex >= state.solution.length;
   elements.exportReplayButton.disabled = !state.replayPackage;
   elements.saveReplayButton.disabled = !state.backendOnline || !state.replayPackage;
+  elements.playButton.textContent = state.playTimer ? t("button.pause") : t("button.play");
+  const scrambleDepth = readScrambleDepth();
+  elements.depthDecreaseButton.disabled = isBusy || scrambleDepth <= MIN_SCRAMBLE_DEPTH;
+  elements.depthIncreaseButton.disabled = isBusy || scrambleDepth >= MAX_SCRAMBLE_DEPTH;
 }
 
 function stateExportPayload() {
@@ -892,17 +1277,17 @@ function exportState(announce = true) {
   } else {
     writeJsonPayload(stateExportPayload());
   }
-  if (announce) updateUi("State exported.");
+  if (announce) updateUi(t("message.stateExported"));
 }
 
 function exportReplayPackage() {
   if (!state.replayPackage) {
     state.jsonMode = "state";
-    updateUi("No replay package available. Solve with RL first.");
+    updateUi(t("message.noReplayForRl"));
     return;
   }
   state.jsonMode = "replay";
-  updateUi("Replay package exported.");
+  updateUi(t("message.replayExported"));
 }
 
 function resetSolution(message) {
@@ -918,13 +1303,13 @@ function resetSolution(message) {
 function stepForward() {
   if (state.replayIndex >= state.solution.length) {
     stopPlayback();
-    updateUi("Replay complete.");
+    updateUi(t("message.replayComplete"));
     return;
   }
   const move = state.solution[state.replayIndex];
   state.stickers = applyMoveToStickers(state.stickers, move);
   state.replayIndex += 1;
-  updateUi(`Applied solution move ${state.replayIndex}: ${move}`);
+  updateUi(t("message.appliedSolutionMove", { index: state.replayIndex, move }));
   if (state.replayIndex >= state.solution.length) stopPlayback();
 }
 
@@ -933,7 +1318,7 @@ function stepBack() {
   state.replayIndex -= 1;
   const move = inverseMove(state.solution[state.replayIndex]);
   state.stickers = applyMoveToStickers(state.stickers, move);
-  updateUi(`Rewound move ${state.replayIndex + 1}.`);
+  updateUi(t("message.rewoundMove", { index: state.replayIndex + 1 }));
 }
 
 function buildMoveButtons() {
@@ -941,17 +1326,18 @@ function buildMoveButtons() {
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = move;
-    button.setAttribute("aria-label", `Apply move ${move}`);
+    button.dataset.move = move;
+    button.setAttribute("aria-label", t("move.applyAria", { move }));
     button.addEventListener("click", async () => {
-      resetSolution(`Applied move ${move}.`);
+      resetSolution(t("message.appliedMove", { move }));
       const payload = await tryBackend("/cube/apply-move", { ...cubePayload(), move });
       if (payload) {
         applyApiCube(payload);
-        updateUi(`API applied move ${move}.`);
+        updateUi(t("message.apiAppliedMove", { move }));
         return;
       }
       applyMoves([move], true);
-      updateUi(`Applied move ${move} locally.`);
+      updateUi(t("message.appliedMoveLocal", { move }));
     });
     elements.moveButtons.append(button);
   });
@@ -996,7 +1382,7 @@ function rlDetailsFromReplayPackage(payload) {
 function importReplayPackage(payload) {
   const initialState = payload.initial_state || {};
   const stickers = String(initialState.stickers || "").split("");
-  if (stickers.length !== 54) throw new Error("Replay package must contain 54 initial stickers.");
+  if (stickers.length !== 54) throw new Error(t("error.replayStickers"));
 
   const solverName = String(payload.solver || payload.solver_result?.solver || "");
   state.stickers = stickers;
@@ -1010,34 +1396,34 @@ function importReplayPackage(payload) {
   state.jsonMode = "replay";
   localStorage.setItem("rubic-rfl-solver-mode", state.solverMode);
   stopPlayback();
-  updateUi("Replay package imported.");
+  updateUi(t("message.replayImported"));
 }
 
 async function loadSavedSessions(announce = true) {
   const payload = await tryBackend("/sessions?limit=25", null, { method: "GET", timeout: 3000 });
   if (!payload) {
     state.savedSessions = [];
-    if (announce) updateUi(`Could not load sessions. ${state.lastApiError || ""}`.trim());
+    if (announce) updateUi(t("message.loadSessionsFailed", { error: state.lastApiError || "" }).trim());
     else updateUi();
     return;
   }
 
   state.savedSessions = Array.isArray(payload.sessions) ? payload.sessions : [];
-  updateUi(announce ? `Loaded ${state.savedSessions.length} saved sessions.` : undefined);
+  updateUi(announce ? t("message.loadedSessions", { count: state.savedSessions.length }) : undefined);
 }
 
 async function saveCurrentReplay() {
   if (!state.replayPackage) {
-    updateUi("No replay package available to save.");
+    updateUi(t("message.noReplayToSave"));
     return;
   }
   const payload = await tryBackend("/sessions", { replay_package: state.replayPackage }, { timeout: 3000 });
   if (!payload?.saved) {
-    updateUi(`Replay could not be saved. ${state.lastApiError || ""}`.trim());
+    updateUi(t("message.replaySaveFailed", { error: state.lastApiError || "" }).trim());
     return;
   }
   await loadSavedSessions(false);
-  updateUi(`Saved replay ${payload.session?.session_id || state.replayPackage.session_id}.`);
+  updateUi(t("message.savedReplay", { sessionId: payload.session?.session_id || state.replayPackage.session_id }));
 }
 
 async function loadSavedSession(sessionId) {
@@ -1047,7 +1433,7 @@ async function loadSavedSession(sessionId) {
     timeout: 3000,
   });
   if (!payload) {
-    updateUi(`Could not load session. ${state.lastApiError || ""}`.trim());
+    updateUi(t("message.loadSessionFailed", { error: state.lastApiError || "" }).trim());
     return;
   }
   importReplayPackage(payload);
@@ -1060,11 +1446,11 @@ async function deleteSavedSession(sessionId) {
     timeout: 3000,
   });
   if (!payload?.deleted) {
-    updateUi(`Could not delete session. ${state.lastApiError || ""}`.trim());
+    updateUi(t("message.deleteSessionFailed", { error: state.lastApiError || "" }).trim());
     return;
   }
   state.savedSessions = state.savedSessions.filter((session) => session.session_id !== sessionId);
-  updateUi(`Deleted saved session ${sessionId}.`);
+  updateUi(t("message.deletedSession", { sessionId }));
 }
 
 function importState() {
@@ -1077,7 +1463,7 @@ function importState() {
   const stickers = Array.isArray(payload.stickers)
     ? payload.stickers
     : String(payload.stickers || "").split("");
-  if (stickers.length !== 54) throw new Error("Imported stickers must contain 54 values.");
+  if (stickers.length !== 54) throw new Error(t("error.importedStickers"));
   state.stickers = stickers;
   state.history = parseMoves(payload.history || []);
   state.solution = parseMoves(payload.solution || []);
@@ -1091,11 +1477,36 @@ function importState() {
   state.validation = payload.validation || null;
   state.jsonMode = "state";
   stopPlayback();
-  updateUi("State imported.");
+  updateUi(t("message.stateImported"));
 }
 
 function savedSolverMode() {
   return localStorage.getItem("rubic-rfl-solver-mode") === "rl" ? "rl" : "classical";
+}
+
+function clampScrambleDepth(value, fallback = MIN_SCRAMBLE_DEPTH) {
+  const numericDepth = value === "" ? fallback : Number(value);
+  const integerDepth = Number.isFinite(numericDepth) ? Math.trunc(numericDepth) : fallback;
+  return Math.max(MIN_SCRAMBLE_DEPTH, Math.min(MAX_SCRAMBLE_DEPTH, integerDepth));
+}
+
+function writeScrambleDepth(value) {
+  const depth = clampScrambleDepth(value);
+  elements.depthInput.value = String(depth);
+  return depth;
+}
+
+function readScrambleDepth() {
+  return writeScrambleDepth(elements.depthInput.value);
+}
+
+function adjustScrambleDepth(delta) {
+  writeScrambleDepth(readScrambleDepth() + delta);
+  updateUi();
+}
+
+function preventScrambleDepthEditing(event) {
+  event.preventDefault();
 }
 
 const state = {
@@ -1108,12 +1519,14 @@ const state = {
   apiBase: localStorage.getItem("rubic-rfl-api-base") || DEFAULT_API_BASE,
   backendOnline: false,
   lastApiError: "",
-  message: "Ready for a scramble.",
+  message: t("message.ready"),
+  language: activeLanguage,
   solverMode: savedSolverMode(),
   rlDetails: null,
   replayPackage: null,
   savedSessions: [],
   jsonMode: "state",
+  pendingAction: null,
 };
 
 const view = {
@@ -1127,40 +1540,72 @@ const view = {
 };
 
 buildMoveButtons();
+setLanguage(activeLanguage);
 elements.apiBaseInput.value = state.apiBase;
+elements.depthInput.min = String(MIN_SCRAMBLE_DEPTH);
+elements.depthInput.max = String(MAX_SCRAMBLE_DEPTH);
+elements.depthInput.step = "1";
+elements.depthInput.readOnly = true;
+elements.depthInput.tabIndex = -1;
+elements.depthInput.setAttribute("aria-readonly", "true");
+
+function handleLanguageChange(language) {
+  state.language = language;
+  setLanguage(language, { announce: true, render: true });
+}
+
+elements.languageEnButton.addEventListener("click", () => handleLanguageChange("en"));
+elements.languageVnButton.addEventListener("click", () => handleLanguageChange("vn"));
+elements.depthDecreaseButton.addEventListener("click", () => adjustScrambleDepth(-1));
+elements.depthIncreaseButton.addEventListener("click", () => adjustScrambleDepth(1));
+elements.depthInput.addEventListener("beforeinput", preventScrambleDepthEditing);
+elements.depthInput.addEventListener("paste", preventScrambleDepthEditing);
+elements.depthInput.addEventListener("drop", preventScrambleDepthEditing);
+elements.depthInput.addEventListener("wheel", preventScrambleDepthEditing, { passive: false });
 
 elements.scrambleButton.addEventListener("click", async () => {
-  const depth = Math.max(0, Math.min(100, Number(elements.depthInput.value || 0)));
+  if (state.pendingAction) return;
+  const depth = readScrambleDepth();
   const seed = elements.seedInput.value.trim() || Date.now();
+  state.pendingAction = "scramble";
   state.stickers = solvedStickers();
   state.history = [];
-  resetSolution(`Generated ${depth}-move scramble.`);
+  resetSolution(t("message.generatingScramble", { depth }));
+  updateUi();
   const payload = await tryBackend("/cube/scramble", { depth, seed });
+  let message;
   if (payload) {
     applyApiCube(payload);
-    updateUi(`API generated ${depth}-move scramble.`);
-    return;
+    message = t("message.apiGeneratedScramble", { depth });
+  } else {
+    applyMoves(generateScramble(depth, seed), true);
+    message = t("message.generatedScrambleLocal", { depth });
   }
-  applyMoves(generateScramble(depth, seed), true);
-  updateUi(`Generated ${depth}-move scramble locally.`);
+  state.pendingAction = null;
+  updateUi(message);
 });
 
 elements.resetButton.addEventListener("click", () => {
+  if (state.pendingAction) return;
   state.stickers = solvedStickers();
   state.history = [];
   state.validation = null;
-  resetSolution("Cube reset.");
+  resetSolution(t("message.cubeReset"));
   updateUi();
 });
 
 elements.solveButton.addEventListener("click", async () => {
+  if (state.pendingAction) return;
+  state.pendingAction = "solve";
   stopPlayback();
+  updateUi(t("message.preparingSolution"));
   if (isSolved(state.stickers)) {
     state.solution = [];
     state.replayIndex = 0;
     state.rlDetails = null;
     state.replayPackage = null;
-    updateUi("Cube is already solved.");
+    state.pendingAction = null;
+    updateUi(t("message.alreadySolved"));
     return;
   }
   const isRlMode = state.solverMode === "rl";
@@ -1175,7 +1620,7 @@ elements.solveButton.addEventListener("click", async () => {
       model_version: "rl-policy",
       steps: [],
     };
-    updateUi("Opening RL stream.");
+    updateUi(t("message.openingRlStream"));
 
     const streamResult = await tryRlSolveStream(
       { stickers: originalStickers.join(""), history: originalHistory },
@@ -1186,8 +1631,9 @@ elements.solveButton.addEventListener("click", async () => {
       state.rlDetails = streamResult.details || state.rlDetails;
       state.solution = parseMoves(streamResult.moves || state.solution);
       state.replayIndex = state.solution.length;
+      state.pendingAction = null;
       loadSavedSessions(false);
-      updateUi(`RL stream solved in ${state.solution.length} moves.`);
+      updateUi(t("message.rlStreamSolved", { count: state.solution.length }));
       return;
     }
 
@@ -1197,7 +1643,8 @@ elements.solveButton.addEventListener("click", async () => {
       state.solution = [];
       state.replayIndex = 0;
       state.rlDetails = streamResult.details || state.rlDetails;
-      updateUi(streamResult.message || "RL stream finished without a solution.");
+      state.pendingAction = null;
+      updateUi(streamResult.message || t("message.rlStreamNoSolution"));
       return;
     }
 
@@ -1229,31 +1676,38 @@ elements.solveButton.addEventListener("click", async () => {
   if (result?.status === "solved") {
     state.solution = parseMoves(result.moves || []);
     state.replayIndex = 0;
+    state.pendingAction = null;
     loadSavedSessions(false);
-    updateUi(`API prepared ${state.solution.length} ${result.solver} moves.`);
+    updateUi(t("message.playingPreparedSolution", { count: state.solution.length }));
+    startPlayback();
     return;
   }
   if (result?.message) {
     state.solution = [];
     state.replayIndex = 0;
+    state.pendingAction = null;
     updateUi(result.message);
     return;
   }
   if (isRlMode) {
     state.solution = [];
     state.replayIndex = 0;
-    updateUi("Backend RL solver is required for RL replay.");
+    state.pendingAction = null;
+    updateUi(t("message.backendRlRequired"));
     return;
   }
   if (!state.history.length) {
     state.solution = [];
     state.replayIndex = 0;
-    updateUi("Backend solver is required for imported states without move history.");
+    state.pendingAction = null;
+    updateUi(t("message.backendSolverRequired"));
     return;
   }
   state.solution = inverseSequence(state.history);
   state.replayIndex = 0;
-  updateUi(`Prepared ${state.solution.length} inverse-history moves locally.`);
+  state.pendingAction = null;
+  updateUi(t("message.playingPreparedSolution", { count: state.solution.length }));
+  startPlayback();
 });
 
 elements.classicalModeButton.addEventListener("click", () => {
@@ -1261,24 +1715,22 @@ elements.classicalModeButton.addEventListener("click", () => {
   state.rlDetails = null;
   state.replayPackage = null;
   localStorage.setItem("rubic-rfl-solver-mode", state.solverMode);
-  updateUi("Classical solver selected.");
+  updateUi(t("message.classicalSelected"));
 });
 
 elements.rlModeButton.addEventListener("click", () => {
   state.solverMode = "rl";
   localStorage.setItem("rubic-rfl-solver-mode", state.solverMode);
-  updateUi("RL solver selected.");
+  updateUi(t("message.rlSolverSelected"));
 });
 
 elements.playButton.addEventListener("click", () => {
   if (state.playTimer) {
     stopPlayback();
-    updateUi("Replay paused.");
+    updateUi(t("message.replayPaused"));
     return;
   }
-  elements.playButton.textContent = "Pause";
-  state.playTimer = window.setInterval(stepForward, 520);
-  stepForward();
+  startPlayback();
 });
 
 elements.stepForwardButton.addEventListener("click", stepForward);
@@ -1287,7 +1739,7 @@ elements.stepBackButton.addEventListener("click", stepBack);
 elements.applySequenceButton.addEventListener("click", async () => {
   try {
     const moves = parseMoves(elements.sequenceInput.value);
-    resetSolution(`Applied ${moves.length} sequence moves.`);
+    resetSolution(t("message.appliedSequence", { count: moves.length }));
     let appliedByApi = true;
     for (const move of moves) {
       const payload = await tryBackend("/cube/apply-move", { ...cubePayload(), move });
@@ -1300,8 +1752,8 @@ elements.applySequenceButton.addEventListener("click", async () => {
     }
     updateUi(
       appliedByApi
-        ? `API applied ${moves.length} sequence moves.`
-        : `Applied ${moves.length} sequence moves with local fallback.`
+        ? t("message.apiAppliedSequence", { count: moves.length })
+        : t("message.localFallbackSequence", { count: moves.length })
     );
   } catch (error) {
     updateUi(error.message);
@@ -1318,7 +1770,7 @@ elements.importButton.addEventListener("click", async () => {
     const payload = await tryBackend("/cube/validate", cubePayload());
     if (payload) {
       applyApiCube(payload);
-      updateUi("State imported and validated by API.");
+      updateUi(t("message.stateImportedValidated"));
     }
   } catch (error) {
     updateUi(error.message);
@@ -1335,7 +1787,7 @@ elements.apiBaseInput.addEventListener("change", () => {
   state.apiBase = elements.apiBaseInput.value.trim() || DEFAULT_API_BASE;
   localStorage.setItem("rubic-rfl-api-base", state.apiBase);
   state.backendOnline = false;
-  updateUi("API URL updated.");
+  updateUi(t("message.apiUrlUpdated"));
 });
 
 elements.viewResetButton.addEventListener("click", () => {

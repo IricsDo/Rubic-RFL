@@ -38,7 +38,7 @@ def parse_index() -> FrontendHtmlParser:
 
 
 def normalized_asset_path(value: str) -> Path:
-    return FRONTEND_ROOT / value.removeprefix("./")
+    return FRONTEND_ROOT / value.split("?", 1)[0].removeprefix("./")
 
 
 def test_frontend_entrypoint_assets_exist() -> None:
@@ -55,10 +55,10 @@ def test_frontend_entrypoint_assets_exist() -> None:
         if script.get("type") == "module" and script.get("src")
     ]
 
-    assert "./styles.css" in stylesheets
-    assert "./src/app.js" in module_scripts
-    assert normalized_asset_path("./styles.css").is_file()
-    assert normalized_asset_path("./src/app.js").is_file()
+    assert any(asset.startswith("./styles.css?v=") for asset in stylesheets)
+    assert any(asset.startswith("./src/app.js?v=") for asset in module_scripts)
+    assert all(normalized_asset_path(asset).is_file() for asset in stylesheets)
+    assert all(normalized_asset_path(asset).is_file() for asset in module_scripts)
 
 
 def test_app_dom_selectors_have_matching_html_ids() -> None:
@@ -77,9 +77,13 @@ def test_workspace_exposes_required_user_flows() -> None:
         "cubeStage",
         "cube",
         "moveButtons",
+        "languageEnButton",
+        "languageVnButton",
         "apiBaseInput",
         "apiCheckButton",
         "depthInput",
+        "depthDecreaseButton",
+        "depthIncreaseButton",
         "seedInput",
         "scrambleButton",
         "resetButton",
@@ -106,6 +110,14 @@ def test_workspace_exposes_required_user_flows() -> None:
     assert not missing_ids
     assert parser.elements_by_id["apiBaseInput"].get("type") == "url"
     assert parser.elements_by_id["depthInput"].get("type") == "number"
+    assert parser.elements_by_id["depthInput"].get("min") == "0"
+    assert parser.elements_by_id["depthInput"].get("max") == "30"
+    assert parser.elements_by_id["depthInput"].get("step") == "1"
+    assert parser.elements_by_id["depthInput"].get("inputmode") == "numeric"
+    assert "readonly" in parser.elements_by_id["depthInput"]
+    assert parser.elements_by_id["depthInput"].get("tabindex") == "-1"
+    assert parser.elements_by_id["depthDecreaseButton"].get("type") == "button"
+    assert parser.elements_by_id["depthIncreaseButton"].get("type") == "button"
     assert parser.elements_by_id["classicalModeButton"].get("aria-pressed") == "true"
     assert parser.elements_by_id["rlModeButton"].get("aria-pressed") == "false"
     assert "hidden" in parser.elements_by_id["rlDecisionPanel"]

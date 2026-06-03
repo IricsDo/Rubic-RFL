@@ -70,6 +70,14 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "ok"})
 
+    def test_health_endpoint_allows_docker_frontend_origins(self):
+        for origin in ("http://127.0.0.1", "http://localhost"):
+            with self.subTest(origin=origin):
+                response = self.client.get("/health", headers={"Origin": origin})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.headers["access-control-allow-origin"], origin)
+
     def test_metrics_endpoint_exposes_http_request_metrics(self):
         self.client.get("/health")
 
