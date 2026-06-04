@@ -48,6 +48,21 @@ Outputs:
 
 Older NumPy baselines can still be trained with `rubic_rl.training.supervised`, `rubic_rl.training.mlp_supervised`, or `rubic_rl.training.baseline_experiment`, but the UI should use the Torch ADI checkpoint when possible.
 
+For the DAVI value-model track, continue from the existing `.resume` file instead of restarting. Use this when ADI/beam search is not strong enough for deeper scrambles:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL\rl
+python -m rubic_rl.training.davi --device cuda --iterations 60000 --batch-size 1000 --hidden-dim 512 --residual-blocks 6 --dropout 0.0 --learning-rate 0.001 --weight-decay 0.00001 --loss-type smooth_l1 --huber-delta 1.0 --grad-clip-norm 5.0 --target-update-interval 200 --checkpoint-interval 200 --curriculum-start 1 --curriculum-interval 150 --max-scramble-depth 30 --hard-depth-fraction 0.5 --seed 20260603 --model-version torch-value-davi-v0.2 --checkpoint-out ..\checkpoints\torch-value-davi.pt --report-out ..\reports\davi-training.json
+```
+
+Outputs:
+
+- `checkpoints/torch-value-davi.pt`: value checkpoint for DAVI evaluation and solver use.
+- `checkpoints/torch-value-davi.pt.resume`: full training state for continuing after interruption.
+- `reports/davi-training.json`: loss, sampled depth range, target/prediction means, MAE, and gradient diagnostics.
+
+`--hard-depth-fraction 0.5` means half of each batch is sampled exactly at the current curriculum depth, which focuses learning on the deepest states after the curriculum reaches 30. Lower it if shallow-depth performance regresses; increase it if deeper depths stay weak.
+
 ## How to Evaluation Data
 
 Evaluate a model with policy-guided beam search before using it in the UI:
@@ -67,6 +82,15 @@ Read these fields first:
 - `avg_expanded_states`: search cost.
 
 Use `rubic_rl.evaluation.policy_eval` for direct rollout checks without beam search. Use `rubic_rl.evaluation.compare_policies` when comparing multiple checkpoints with the same seeded evaluation setup.
+
+Evaluate the DAVI checkpoint with a fixed search budget so model comparisons are fair:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL\rl
+python -m rubic_rl.evaluation.davi_eval --model ..\checkpoints\torch-value-davi.pt --depths 12,13,14,15,16 --samples-per-depth 10 --weight 0.6 --batch-expansion 1000 --max-nodes 1000000 --device cuda --out ..\reports\davi-eval-12-16.json
+```
+
+For the official promotion gate, use the same `weight`, `batch-expansion`, `max-nodes`, and `seed`, then raise `--samples-per-depth` to `50`. Changing search parameters changes the solver budget, so do not compare two checkpoints unless these values match.
 
 ## How to Config This Model to UI
 

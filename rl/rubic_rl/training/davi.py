@@ -62,17 +62,33 @@ class DAVIConfig:
     solved_fraction: float = 0.05
     learning_rate: float = 1e-3
     weight_decay: float = 1e-5
+    loss_type: str = "mse"
+    huber_delta: float = 1.0
+    grad_clip_norm: float | None = None
     target_update_interval: int = 200
     checkpoint_interval: int = 200
     curriculum: bool = True
     curriculum_start: int = 1
     curriculum_interval: int = 150
+    hard_depth_fraction: float = 0.0
     hidden_dim: int = 512
     residual_blocks: int = 6
     dropout: float = 0.0
     seed: int | None = 20260603
     model_version: str = "torch-value-davi-v0.1"
     device: str = "cpu"
+
+    def __post_init__(self) -> None:
+        if self.batch_size <= 0:
+            raise ValueError("batch_size must be positive")
+        if self.huber_delta <= 0:
+            raise ValueError("huber_delta must be positive")
+        if self.grad_clip_norm is not None and self.grad_clip_norm <= 0:
+            raise ValueError("grad_clip_norm must be positive when set")
+        if not 0.0 <= self.hard_depth_fraction <= 1.0:
+            raise ValueError("hard_depth_fraction must be in [0, 1]")
+        if self.loss_type not in {"mse", "smooth_l1"}:
+            raise ValueError("loss_type must be 'mse' or 'smooth_l1'")
 
     def to_json_dict(self) -> dict[str, Any]:
         data = asdict(self)
@@ -129,6 +145,45 @@ def _current_curriculum_depth(config: DAVIConfig, step: int) -> int:
     return int(min(config.max_scramble_depth, grown))
 
 
+def _sample_training_states(
+    config: DAVIConfig,
+    depth: int,
+    rng: np.random.Generator,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Sample the training batch, optionally focusing part of it at current depth."""
+    hard_n = int(round(config.batch_size * config.hard_depth_fraction))
+    hard_n = max(0, min(config.batch_size, hard_n))
+    uniform_n = config.batch_size - hard_n
+
+    batches: list[np.ndarray] = []
+    depths: list[np.ndarray] = []
+    if uniform_n > 0:
+        states, sampled_depths = C.scramble_batch(
+            uniform_n, depth, rng, min_depth=config.min_scramble_depth
+        )
+        batches.append(states)
+        depths.append(sampled_depths)
+    if hard_n > 0:
+        states, sampled_depths = C.scramble_batch(hard_n, depth, rng, min_depth=depth)
+        batches.append(states)
+        depths.append(sampled_depths)
+
+    if not batches:
+        return C.solved_batch(0), np.zeros(0, dtype=np.int64)
+    states = np.vstack(batches)
+    sampled_depths = np.concatenate(depths).astype(np.int64)
+    order = rng.permutation(len(states))
+    return states[order], sampled_depths[order]
+
+
+def _loss(predicted: torch.Tensor, target: torch.Tensor, config: DAVIConfig) -> torch.Tensor:
+    if config.loss_type == "mse":
+        return functional.mse_loss(predicted, target)
+    if config.loss_type in {"smooth_l1", "huber"}:
+        return functional.smooth_l1_loss(predicted, target, beta=config.huber_delta)
+    raise ValueError("loss_type must be 'mse' or 'smooth_l1'")
+
+
 def run_davi_training(config: DAVIConfig) -> dict[str, Any]:
     device = torch.device(config.device)
     model = RubiksPolicyValueNet(config.model_config).to(device)
@@ -152,9 +207,7 @@ def run_davi_training(config: DAVIConfig) -> dict[str, Any]:
 
     for step in range(start_step, config.iterations):
         depth = _current_curriculum_depth(config, step)
-        states, _ = C.scramble_batch(
-            config.batch_size, depth, rng, min_depth=config.min_scramble_depth
-        )
+        states, sampled_depths = _sample_training_states(config, depth, rng)
         targets = _bootstrap_targets(target_model, states, device)
 
         if n_solved > 0:
@@ -167,26 +220,43 @@ def run_davi_training(config: DAVIConfig) -> dict[str, Any]:
         model.train()
         optimizer.zero_grad()
         predicted = _value(model, features)
-        loss = functional.mse_loss(predicted, target_tensor)
+        loss = _loss(predicted, target_tensor, config)
         loss.backward()
+        grad_norm = None
+        if config.grad_clip_norm is not None and config.grad_clip_norm > 0:
+            grad_norm = float(
+                torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_clip_norm)
+            )
         optimizer.step()
 
         if (step + 1) % config.target_update_interval == 0:
             target_model.load_state_dict(model.state_dict())
 
         if (step + 1) % 50 == 0 or step == start_step:
+            errors = (predicted.detach() - target_tensor).abs()
             entry = {
                 "step": step + 1,
                 "loss": float(loss.item()),
                 "curriculum_depth": depth,
+                "sampled_depth_min": int(sampled_depths.min()) if len(sampled_depths) else 0,
+                "sampled_depth_max": int(sampled_depths.max()) if len(sampled_depths) else 0,
+                "sampled_depth_mean": float(sampled_depths.mean()) if len(sampled_depths) else 0.0,
                 "target_mean": float(targets.mean()),
+                "target_std": float(targets.std()),
+                "pred_mean": float(predicted.detach().mean().item()),
+                "pred_std": float(predicted.detach().std(unbiased=False).item()),
+                "mae": float(errors.mean().item()),
+                "grad_norm": grad_norm,
                 "elapsed_s": round(time.perf_counter() - started, 1),
             }
             history.append(entry)
             print(
                 f"[davi] step {step + 1}/{config.iterations} "
                 f"loss={entry['loss']:.4f} K={depth} "
-                f"y_mean={entry['target_mean']:.2f} {entry['elapsed_s']}s",
+                f"depth_mean={entry['sampled_depth_mean']:.1f} "
+                f"y_mean={entry['target_mean']:.2f} "
+                f"pred_mean={entry['pred_mean']:.2f} "
+                f"mae={entry['mae']:.3f} {entry['elapsed_s']}s",
                 flush=True,
             )
 
@@ -286,11 +356,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--solved-fraction", type=float, default=0.05)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-5)
+    parser.add_argument("--loss-type", choices=("mse", "smooth_l1"), default="mse")
+    parser.add_argument("--huber-delta", type=float, default=1.0)
+    parser.add_argument("--grad-clip-norm", type=float, default=None)
     parser.add_argument("--target-update-interval", type=int, default=200)
     parser.add_argument("--checkpoint-interval", type=int, default=200)
     parser.add_argument("--no-curriculum", action="store_false", dest="curriculum")
     parser.add_argument("--curriculum-start", type=int, default=1)
     parser.add_argument("--curriculum-interval", type=int, default=150)
+    parser.add_argument("--hard-depth-fraction", type=float, default=0.0)
     parser.add_argument("--hidden-dim", type=int, default=512)
     parser.add_argument("--residual-blocks", type=int, default=6)
     parser.add_argument("--dropout", type=float, default=0.0)
@@ -310,11 +384,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         solved_fraction=args.solved_fraction,
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
+        loss_type=args.loss_type,
+        huber_delta=args.huber_delta,
+        grad_clip_norm=args.grad_clip_norm,
         target_update_interval=args.target_update_interval,
         checkpoint_interval=args.checkpoint_interval,
         curriculum=args.curriculum,
         curriculum_start=args.curriculum_start,
         curriculum_interval=args.curriculum_interval,
+        hard_depth_fraction=args.hard_depth_fraction,
         hidden_dim=args.hidden_dim,
         residual_blocks=args.residual_blocks,
         dropout=args.dropout,
