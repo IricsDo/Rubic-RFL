@@ -64,6 +64,7 @@ class DAVIConfig:
     weight_decay: float = 1e-5
     loss_type: str = "mse"
     huber_delta: float = 1.0
+    policy_loss_weight: float = 0.0
     grad_clip_norm: float | None = None
     target_update_interval: int = 200
     checkpoint_interval: int = 200
@@ -85,6 +86,8 @@ class DAVIConfig:
             raise ValueError("huber_delta must be positive")
         if self.grad_clip_norm is not None and self.grad_clip_norm <= 0:
             raise ValueError("grad_clip_norm must be positive when set")
+        if self.policy_loss_weight < 0:
+            raise ValueError("policy_loss_weight cannot be negative")
         if not 0.0 <= self.hard_depth_fraction <= 1.0:
             raise ValueError("hard_depth_fraction must be in [0, 1]")
         if self.loss_type not in {"mse", "smooth_l1"}:
@@ -121,8 +124,8 @@ def _bootstrap_targets(
     target_model: RubiksPolicyValueNet,
     states: np.ndarray,
     device: torch.device,
-) -> np.ndarray:
-    """Compute ``y(s) = min_a [1 + V_target(child_a)]`` for an (N,54) batch."""
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute value targets and the greedy bootstrap action for an (N,54) batch."""
     n = states.shape[0]
     children = C.expand_all_actions(states)  # (N, A, 54)
     flat = children.reshape(n * C.NUM_ACTIONS, C.NUM_STICKERS)
@@ -134,8 +137,11 @@ def _bootstrap_targets(
     )
     # Cost of one move + future cost (0 if the child is already solved).
     cost = 1.0 + torch.where(child_solved, torch.zeros_like(child_value), child_value)
-    targets, _ = cost.min(dim=1)
-    return targets.detach().cpu().numpy()
+    targets, best_actions = cost.min(dim=1)
+    return (
+        targets.detach().cpu().numpy(),
+        best_actions.detach().cpu().numpy().astype(np.int64),
+    )
 
 
 def _current_curriculum_depth(config: DAVIConfig, step: int) -> int:
@@ -184,6 +190,14 @@ def _loss(predicted: torch.Tensor, target: torch.Tensor, config: DAVIConfig) -> 
     raise ValueError("loss_type must be 'mse' or 'smooth_l1'")
 
 
+def _policy_accuracy(logits: torch.Tensor, targets: torch.Tensor) -> float | None:
+    mask = targets >= 0
+    if not bool(mask.any()):
+        return None
+    predicted = torch.argmax(logits[mask], dim=1)
+    return float((predicted == targets[mask]).float().mean().item())
+
+
 def run_davi_training(config: DAVIConfig) -> dict[str, Any]:
     device = torch.device(config.device)
     model = RubiksPolicyValueNet(config.model_config).to(device)
@@ -208,19 +222,29 @@ def run_davi_training(config: DAVIConfig) -> dict[str, Any]:
     for step in range(start_step, config.iterations):
         depth = _current_curriculum_depth(config, step)
         states, sampled_depths = _sample_training_states(config, depth, rng)
-        targets = _bootstrap_targets(target_model, states, device)
+        targets, best_actions = _bootstrap_targets(target_model, states, device)
 
         if n_solved > 0:
             states = np.vstack([states, C.solved_batch(n_solved)])
             targets = np.concatenate([targets, np.zeros(n_solved, dtype=np.float32)])
+            best_actions = np.concatenate(
+                [best_actions, np.full(n_solved, -100, dtype=np.int64)]
+            )
 
         features = torch.as_tensor(C.one_hot_features(states), device=device)
         target_tensor = torch.as_tensor(targets, dtype=torch.float32, device=device)
+        policy_target_tensor = torch.as_tensor(best_actions, dtype=torch.long, device=device)
 
         model.train()
         optimizer.zero_grad()
-        predicted = _value(model, features)
-        loss = _loss(predicted, target_tensor, config)
+        policy_logits, predicted = model(features)
+        value_loss = _loss(predicted, target_tensor, config)
+        policy_loss = functional.cross_entropy(
+            policy_logits,
+            policy_target_tensor,
+            ignore_index=-100,
+        )
+        loss = value_loss + config.policy_loss_weight * policy_loss
         loss.backward()
         grad_norm = None
         if config.grad_clip_norm is not None and config.grad_clip_norm > 0:
@@ -237,6 +261,9 @@ def run_davi_training(config: DAVIConfig) -> dict[str, Any]:
             entry = {
                 "step": step + 1,
                 "loss": float(loss.item()),
+                "value_loss": float(value_loss.item()),
+                "policy_loss": float(policy_loss.item()),
+                "policy_accuracy": _policy_accuracy(policy_logits.detach(), policy_target_tensor),
                 "curriculum_depth": depth,
                 "sampled_depth_min": int(sampled_depths.min()) if len(sampled_depths) else 0,
                 "sampled_depth_max": int(sampled_depths.max()) if len(sampled_depths) else 0,
@@ -250,13 +277,18 @@ def run_davi_training(config: DAVIConfig) -> dict[str, Any]:
                 "elapsed_s": round(time.perf_counter() - started, 1),
             }
             history.append(entry)
+            policy_accuracy = entry["policy_accuracy"]
+            policy_accuracy_text = (
+                "n/a" if policy_accuracy is None else f"{policy_accuracy:.3f}"
+            )
             print(
                 f"[davi] step {step + 1}/{config.iterations} "
                 f"loss={entry['loss']:.4f} K={depth} "
                 f"depth_mean={entry['sampled_depth_mean']:.1f} "
                 f"y_mean={entry['target_mean']:.2f} "
                 f"pred_mean={entry['pred_mean']:.2f} "
-                f"mae={entry['mae']:.3f} {entry['elapsed_s']}s",
+                f"mae={entry['mae']:.3f} "
+                f"pi_acc={policy_accuracy_text} {entry['elapsed_s']}s",
                 flush=True,
             )
 
@@ -358,6 +390,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--weight-decay", type=float, default=1e-5)
     parser.add_argument("--loss-type", choices=("mse", "smooth_l1"), default="mse")
     parser.add_argument("--huber-delta", type=float, default=1.0)
+    parser.add_argument("--policy-loss-weight", type=float, default=0.0)
     parser.add_argument("--grad-clip-norm", type=float, default=None)
     parser.add_argument("--target-update-interval", type=int, default=200)
     parser.add_argument("--checkpoint-interval", type=int, default=200)
@@ -386,6 +419,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         weight_decay=args.weight_decay,
         loss_type=args.loss_type,
         huber_delta=args.huber_delta,
+        policy_loss_weight=args.policy_loss_weight,
         grad_clip_norm=args.grad_clip_norm,
         target_update_interval=args.target_update_interval,
         checkpoint_interval=args.checkpoint_interval,

@@ -17,7 +17,7 @@ import numpy as np
 
 from rubic_rl import cube_ops as C
 from rubic_rl.models.policy_value import load_policy_value_checkpoint
-from rubic_rl.search import make_value_fn, weighted_astar_solve
+from rubic_rl.search import make_action_policy_fn, make_value_fn, weighted_astar_solve
 
 
 def _parse_depths(values: Sequence[str]) -> tuple[int, ...]:
@@ -34,11 +34,13 @@ def evaluate(
     depths: tuple[int, ...],
     samples_per_depth: int,
     weight: float,
+    policy_weight: float,
     batch_expansion: int,
     max_nodes: int,
     seed: int | None,
 ) -> dict:
     value_fn = make_value_fn(model, device)
+    action_policy_fn = make_action_policy_fn(model, device) if policy_weight > 0.0 else None
     rng = np.random.default_rng(seed)
     by_depth: dict[str, dict] = {}
     all_solved: list[bool] = []
@@ -61,7 +63,9 @@ def evaluate(
             result = weighted_astar_solve(
                 row,
                 value_fn,
+                action_policy_fn=action_policy_fn,
                 weight=weight,
+                policy_weight=policy_weight,
                 batch_expansion=batch_expansion,
                 max_nodes=max_nodes,
             )
@@ -103,6 +107,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--depths", nargs="+", default=("1", "2", "3"))
     parser.add_argument("--samples-per-depth", type=int, default=50)
     parser.add_argument("--weight", type=float, default=0.6)
+    parser.add_argument("--policy-weight", type=float, default=0.0)
     parser.add_argument("--batch-expansion", type=int, default=100)
     parser.add_argument("--max-nodes", type=int, default=1_000_000)
     parser.add_argument("--device", default="cpu")
@@ -124,6 +129,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "depths": list(_parse_depths(args.depths)),
             "samples_per_depth": args.samples_per_depth,
             "weight": args.weight,
+            "policy_weight": args.policy_weight,
             "batch_expansion": args.batch_expansion,
             "max_nodes": args.max_nodes,
             "seed": args.seed,
@@ -134,6 +140,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             depths=_parse_depths(args.depths),
             samples_per_depth=args.samples_per_depth,
             weight=args.weight,
+            policy_weight=args.policy_weight,
             batch_expansion=args.batch_expansion,
             max_nodes=args.max_nodes,
             seed=args.seed,

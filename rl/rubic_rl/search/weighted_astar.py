@@ -17,6 +17,7 @@ import numpy as np
 from rubic_rl import cube_ops as C
 
 ValueFn = Callable[[np.ndarray], np.ndarray]
+ActionPolicyFn = Callable[[np.ndarray], np.ndarray]
 
 
 def make_value_fn(model, device, *, clamp_min: float = 0.0, batch: int = 8192) -> ValueFn:
@@ -37,11 +38,33 @@ def make_value_fn(model, device, *, clamp_min: float = 0.0, batch: int = 8192) -
     return value_fn
 
 
+def make_action_policy_fn(model, device, *, batch: int = 8192) -> ActionPolicyFn:
+    """Wrap a RubiksPolicyValueNet into ``states (M,54) -> action probabilities``."""
+    import torch
+
+    def action_policy_fn(states: np.ndarray) -> np.ndarray:
+        features = C.one_hot_features(states)
+        chunks = []
+        for start in range(0, len(features), batch):
+            tensor = torch.as_tensor(features[start : start + batch], device=device)
+            with torch.no_grad():
+                logits, _ = model(tensor)
+                probabilities = torch.softmax(logits, dim=1)
+            chunks.append(probabilities.detach().cpu().numpy())
+        if not chunks:
+            return np.zeros((0, C.NUM_ACTIONS), dtype=np.float32)
+        return np.concatenate(chunks).astype(np.float32)
+
+    return action_policy_fn
+
+
 def weighted_astar_solve(
     state: np.ndarray,
     value_fn: ValueFn,
     *,
+    action_policy_fn: ActionPolicyFn | None = None,
     weight: float = 0.6,
+    policy_weight: float = 0.0,
     batch_expansion: int = 100,
     max_nodes: int = 1_000_000,
     avoid_inverse: bool = True,
@@ -68,14 +91,30 @@ def weighted_astar_solve(
         while open_heap and len(popped) < batch_expansion:
             popped.append(heapq.heappop(open_heap))
 
+        parent_states = np.stack(
+            [np.frombuffer(sbytes, dtype=np.int64) for _f, _t, _g, sbytes, _path in popped]
+        )
+        parent_probs = (
+            action_policy_fn(parent_states)
+            if action_policy_fn is not None and policy_weight > 0.0
+            else None
+        )
+
         child_states: list[np.ndarray] = []
-        child_meta: list[tuple[int, tuple, bytes]] = []
-        for _f, _t, g, sbytes, path in popped:
+        child_meta: list[tuple[int, tuple, bytes, float]] = []
+        for parent_index, (_f, _t, g, sbytes, path) in enumerate(popped):
             expanded += 1
-            parent = np.frombuffer(sbytes, dtype=np.int64)
+            parent = parent_states[parent_index]
             last_action = C.MOVES.index(path[-1]) if path else -1
             kids = parent[C.MOVE_PERMUTATIONS]  # (A, 54)
-            for action in range(C.NUM_ACTIONS):
+            if parent_probs is None:
+                action_order = range(C.NUM_ACTIONS)
+                probabilities = None
+            else:
+                probabilities = parent_probs[parent_index]
+                action_order = np.argsort(-probabilities)
+            for action in action_order:
+                action = int(action)
                 if (
                     avoid_inverse
                     and last_action >= 0
@@ -88,8 +127,13 @@ def weighted_astar_solve(
                 prev = best_g.get(child_bytes)
                 if prev is not None and prev <= g_child:
                     continue
+                policy_cost = (
+                    0.0
+                    if probabilities is None
+                    else float(-np.log(max(float(probabilities[action]), 1e-8)))
+                )
                 child_states.append(child)
-                child_meta.append((g_child, path + (C.MOVES[action],), child_bytes))
+                child_meta.append((g_child, path + (C.MOVES[action],), child_bytes, policy_cost))
 
         if not child_states:
             continue
@@ -100,7 +144,7 @@ def weighted_astar_solve(
         solved_mask = C.is_solved(child_arr)
         if solved_mask.any():
             index = int(np.argmax(solved_mask))
-            g_child, path, _cb = child_meta[index]
+            g_child, path, _cb, _policy_cost = child_meta[index]
             return {
                 "solved": True,
                 "moves": path,
@@ -110,7 +154,7 @@ def weighted_astar_solve(
             }
 
         values = value_fn(child_arr)
-        for (g_child, path, child_bytes), value in zip(child_meta, values):
+        for (g_child, path, child_bytes, policy_cost), value in zip(child_meta, values):
             prev = best_g.get(child_bytes)
             if prev is not None and prev <= g_child:
                 continue
@@ -118,7 +162,13 @@ def weighted_astar_solve(
             counter += 1
             heapq.heappush(
                 open_heap,
-                (g_child + weight * float(value), counter, g_child, child_bytes, path),
+                (
+                    g_child + weight * float(value) + policy_weight * policy_cost,
+                    counter,
+                    g_child,
+                    child_bytes,
+                    path,
+                ),
             )
 
     return {

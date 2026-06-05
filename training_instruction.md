@@ -63,6 +63,15 @@ Outputs:
 
 `--hard-depth-fraction 0.5` means half of each batch is sampled exactly at the current curriculum depth, which focuses learning on the deepest states after the curriculum reaches 30. Lower it if shallow-depth performance regresses; increase it if deeper depths stay weak.
 
+DAVI v0.3 also trains the policy head with the best bootstrap action. This can resume from an existing DAVI checkpoint because the policy head already exists in the model architecture:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL\rl
+python -m rubic_rl.training.davi --device cuda --iterations 100000 --batch-size 1000 --hidden-dim 512 --residual-blocks 6 --dropout 0.0 --learning-rate 0.001 --weight-decay 0.00001 --loss-type smooth_l1 --huber-delta 1.0 --policy-loss-weight 0.25 --grad-clip-norm 5.0 --target-update-interval 200 --checkpoint-interval 200 --curriculum-start 1 --curriculum-interval 150 --max-scramble-depth 30 --hard-depth-fraction 0.5 --seed 20260603 --model-version torch-value-davi-v0.3 --checkpoint-out ..\checkpoints\torch-value-davi.pt --report-out ..\reports\davi-training.json
+```
+
+Read `policy_accuracy`, `policy_loss`, `value_loss`, and `mae` in `reports/davi-training.json`. If `policy_accuracy` stays near random chance, policy-guided search will not help.
+
 ## How to Evaluation Data
 
 Evaluate a model with policy-guided beam search before using it in the UI:
@@ -91,6 +100,15 @@ python -m rubic_rl.evaluation.davi_eval --model ..\checkpoints\torch-value-davi.
 ```
 
 For the official promotion gate, use the same `weight`, `batch-expansion`, `max-nodes`, and `seed`, then raise `--samples-per-depth` to `50`. Changing search parameters changes the solver budget, so do not compare two checkpoints unless these values match.
+
+After DAVI v0.3 policy training, evaluate the policy-aware solver with a fixed `policy-weight`:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL\rl
+python -m rubic_rl.evaluation.davi_eval --model ..\checkpoints\torch-value-davi.pt --depths 15 --samples-per-depth 10 --weight 0.6 --policy-weight 0.25 --batch-expansion 1000 --max-nodes 1000000 --device cuda --out ..\reports\davi-eval-depth-15-policy-v03.json
+```
+
+Compare policy-aware reports only against other reports with the same `policy-weight`.
 
 ## How to Config This Model to UI
 
