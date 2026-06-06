@@ -16,14 +16,14 @@ the response status is `failed` and the best explored move prefix is returned.
 By default, the backend looks for:
 
 ```text
-checkpoints/mlp-baseline-depth-1-2-3.npz
+checkpoints/lightweight-linear-axis-samples-28-heldout/linear-policy.npz
 ```
 
 Override the checkpoint, search depth, beam width, and candidate count before
 starting Uvicorn:
 
 ```powershell
-$env:RUBIC_RL_MODEL_PATH="checkpoints\mlp-baseline-depth-1-2-3.npz"
+$env:RUBIC_RL_MODEL_PATH="checkpoints\lightweight-linear-axis-samples-28-heldout\linear-policy.npz"
 $env:RUBIC_RL_POLICY_TYPE="auto"
 $env:RUBIC_RL_POLICY_DEVICE="cpu"
 $env:RUBIC_RL_MAX_STEPS="30"

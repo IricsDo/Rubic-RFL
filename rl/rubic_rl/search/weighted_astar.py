@@ -85,6 +85,7 @@ def weighted_astar_solve(
     best_g: dict[bytes, int] = {state.tobytes(): 0}
     expanded = 0
     generated = 0
+    depth_reached = 0
 
     while open_heap and expanded < max_nodes:
         popped = []
@@ -124,6 +125,7 @@ def weighted_astar_solve(
                 child = kids[action]
                 child_bytes = child.tobytes()
                 g_child = g + 1
+                depth_reached = max(depth_reached, g_child)
                 prev = best_g.get(child_bytes)
                 if prev is not None and prev <= g_child:
                     continue
@@ -151,6 +153,8 @@ def weighted_astar_solve(
                 "length": len(path),
                 "expanded": expanded,
                 "generated": generated,
+                "visited": len(best_g),
+                "depth_reached": depth_reached,
             }
 
         values = value_fn(child_arr)
@@ -177,4 +181,6 @@ def weighted_astar_solve(
         "length": 0,
         "expanded": expanded,
         "generated": generated,
+        "visited": len(best_g),
+        "depth_reached": depth_reached,
     }

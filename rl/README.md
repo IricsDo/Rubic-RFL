@@ -52,6 +52,103 @@ cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL\rl
 ..\.venv\Scripts\python.exe -m pytest -p no:cacheprovider tests
 ```
 
+Run a tracked experiment from JSON config:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL
+.\.venv\Scripts\python.exe -m rubic_rl.training.run_experiment --config rl\experiments\baseline-smoke.json
+```
+
+This writes standardized outputs under `datasets/<run-name>/`,
+`checkpoints/<run-name>/`, and `reports/<run-name>/`, including a
+`manifest.json` with the run config, outputs, git commit, and headline metrics.
+
+For the recommended lightweight path, start with the small imitation-style
+policy track instead of ADI or DAVI:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL
+.\.venv\Scripts\python.exe -m rubic_rl.training.run_experiment --config rl\experiments\lightweight-mlp-smoke.json
+```
+
+Then run the broader shallow benchmark:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL
+.\.venv\Scripts\python.exe -m rubic_rl.training.run_experiment --config rl\experiments\lightweight-mlp-shallow.json
+```
+
+These configs keep the model small, keep the dataset cheap to generate, and
+benchmark against existing baseline runs when those checkpoints are present.
+
+Use the lightweight smoke linear checkpoint as the initial reference candidate:
+
+```text
+checkpoints/lightweight-mlp-smoke/linear-policy.npz
+```
+
+Use the held-out shallow case set at:
+
+```text
+rl/benchmarks/heldout-shallow.json
+```
+
+when you want to validate a candidate without reusing the earlier smoke or
+shallow benchmark cases.
+
+When the smoke run becomes the incumbent, use the promotion-oriented linear
+variant to try to beat it on the shallow suite:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL
+.\.venv\Scripts\python.exe -m rubic_rl.training.run_experiment --config rl\experiments\lightweight-linear-promote.json
+```
+
+If you want the same benchmark and manifest flow without paying for MLP
+training, use the linear-only experiment type:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL
+.\.venv\Scripts\python.exe -m rubic_rl.training.run_experiment --config rl\experiments\lightweight-linear-only-promote.json
+```
+
+To compare a few cheap linear-only candidates in one pass, run the sweep
+entrypoint with the curated configs:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL
+.\.venv\Scripts\python.exe -m rubic_rl.training.run_sweep --name lightweight-linear-sweep --config rl\experiments\lightweight-linear-sweep-balanced.json --config rl\experiments\lightweight-linear-sweep-data-heavy.json --config rl\experiments\lightweight-linear-sweep-depth-4.json
+```
+
+This writes `reports/<sweep-name>/summary.json`, ranks the candidates by the
+promotion gate first, then by solve-rate delta and latency, and gives you one
+place to inspect the current best linear checkpoint.
+
+For narrower tuning, keep the held-out cases fixed and change only one training
+axis at a time:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL\rl
+..\.venv\Scripts\python.exe -m rubic_rl.training.run_sweep --name lightweight-linear-heldout-axis --config experiments\lightweight-linear-axis-samples-28-heldout.json --config experiments\lightweight-linear-axis-depth-4-heldout.json
+```
+
+Run a shared benchmark suite on persisted benchmark cases:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL
+.\.venv\Scripts\python.exe -m rubic_rl.evaluation.benchmark_suite --suite smoke --policy-model baseline=checkpoints\baseline-smoke\linear-policy.npz --cases-out reports\benchmark-smoke-cases.json --out reports\benchmark-smoke.json
+```
+
+This writes a common case set and a single report that ranks policy rollout,
+policy-guided beam search, and optional DAVI weighted-A* entrants on the same
+scrambles. Add `--davi-model label=path\to\checkpoint.pt` to include the value
+track in the same benchmark run.
+
+Experiment configs can also declare `benchmark.compare_runs` so a new run can
+automatically compare against checkpoints from prior tracked runs. Missing
+reference runs are skipped by default; set `require_compare_runs` when a
+promotion gate should fail on missing incumbents.
+
 Generate a small supervised dataset:
 
 ```powershell

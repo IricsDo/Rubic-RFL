@@ -1,0 +1,41 @@
+{
+  "name": "lightweight-mlp-smoke",
+  "type": "baseline",
+  "description": "Lightweight supervised policy plus search smoke run for fast local iteration and Colab-class hardware.",
+  "benchmark": {
+    "suite": "smoke",
+    "compare_runs": [
+      {
+        "run": "baseline-smoke",
+        "type": "baseline",
+        "label_prefix": "baseline-smoke"
+      }
+    ]
+  },
+  "config": {
+    "depths": [1, 2, 3],
+    "samples_per_depth": 12,
+    "canonical_depths": [1, 2],
+    "include_solved": true,
+    "seed": 20260606,
+    "evaluation_samples_per_depth": 6,
+    "evaluation_max_steps": 12,
+    "linear_config": {
+      "epochs": 12,
+      "learning_rate": 0.12,
+      "batch_size": 32,
+      "l2": 0.0001,
+      "validation_split": 0.2,
+      "seed": 20260606
+    },
+    "mlp_config": {
+      "hidden_units": 16,
+      "epochs": 24,
+      "learning_rate": 0.04,
+      "batch_size": 32,
+      "l2": 0.0001,
+      "validation_split": 0.2,
+      "seed": 20260606
+    }
+  }
+}

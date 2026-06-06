@@ -34,6 +34,17 @@ _SEARCH_EVAL_EXPORTS = {
     "summarize_benchmark_results",
 }
 
+_BENCHMARK_SUITE_EXPORTS = {
+    "SUITE_PRESETS",
+    "WeightedAStarBenchmarkConfig",
+    "generate_suite_cases",
+    "load_benchmark_cases",
+    "preset_config",
+    "run_benchmark_suite",
+    "run_davi_benchmark",
+    "write_benchmark_cases",
+}
+
 if TYPE_CHECKING:
     from .compare_policies import (
         ModelSpec,
@@ -64,8 +75,23 @@ if TYPE_CHECKING:
         run_search_benchmark,
         summarize_benchmark_results,
     )
+    from .benchmark_suite import (
+        SUITE_PRESETS,
+        WeightedAStarBenchmarkConfig,
+        generate_suite_cases,
+        load_benchmark_cases,
+        preset_config,
+        run_benchmark_suite,
+        run_davi_benchmark,
+        write_benchmark_cases,
+    )
 
-__all__ = sorted(_POLICY_EVAL_EXPORTS | _COMPARE_EXPORTS | _SEARCH_EVAL_EXPORTS)
+__all__ = sorted(
+    _POLICY_EVAL_EXPORTS
+    | _COMPARE_EXPORTS
+    | _SEARCH_EVAL_EXPORTS
+    | _BENCHMARK_SUITE_EXPORTS
+)
 
 
 def __getattr__(name: str):
@@ -81,4 +107,8 @@ def __getattr__(name: str):
         from . import search_eval
 
         return getattr(search_eval, name)
+    if name in _BENCHMARK_SUITE_EXPORTS:
+        from . import benchmark_suite
+
+        return getattr(benchmark_suite, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

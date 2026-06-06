@@ -52,7 +52,9 @@ Grafana loads the `Rubic RFL Overview` dashboard automatically from
 ## RL Checkpoints
 
 The backend mounts `./checkpoints` as `/models`. Set `RUBIC_RL_MODEL_FILE` in
-`.env` to the checkpoint filename to use for RL solving, and keep
+`.env` to the checkpoint-relative path to use for RL solving. The current
+held-out lightweight candidate is
+`lightweight-linear-axis-samples-28-heldout/linear-policy.npz`. Keep
 `RUBIC_RL_POLICY_TYPE=auto` for normal `.npz` policies. For `.pt` Torch
 checkpoints, set `RUBIC_RL_POLICY_TYPE=torch` and use an image/runtime with
 PyTorch installed. `RUBIC_RL_POLICY_DEVICE` defaults to `cpu`; use `cuda` only

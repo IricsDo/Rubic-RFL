@@ -23,7 +23,7 @@ FROM python:3.11-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     RUBIC_SESSION_STORE_DIR=/data/sessions \
-    RUBIC_RL_MODEL_PATH=/models/mlp-baseline-depth-1-2-3.npz \
+    RUBIC_RL_MODEL_PATH=/models/lightweight-linear-axis-samples-28-heldout/linear-policy.npz \
     RUBIC_RL_POLICY_TYPE=auto \
     RUBIC_RL_POLICY_DEVICE=cpu \
     RUBIC_RL_MAX_STEPS=30 \

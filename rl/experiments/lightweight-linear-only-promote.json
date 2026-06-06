@@ -1,0 +1,45 @@
+{
+  "name": "lightweight-linear-only-promote",
+  "type": "linear",
+  "description": "Linear-only promotion run that avoids MLP training cost while keeping the benchmark and manifest workflow intact.",
+  "benchmark": {
+    "suite": "shallow",
+    "compare_runs": [
+      {
+        "run": "lightweight-mlp-smoke",
+        "type": "baseline",
+        "label_prefix": "lightweight-smoke",
+        "models": ["linear"]
+      },
+      {
+        "run": "lightweight-mlp-shallow",
+        "type": "baseline",
+        "label_prefix": "lightweight-shallow",
+        "models": ["linear"]
+      },
+      {
+        "run": "lightweight-linear-promote",
+        "type": "baseline",
+        "label_prefix": "linear-promote",
+        "models": ["linear"]
+      }
+    ]
+  },
+  "config": {
+    "depths": [1, 2, 3],
+    "samples_per_depth": 24,
+    "canonical_depths": [1, 2],
+    "include_solved": true,
+    "seed": 20260606,
+    "evaluation_samples_per_depth": 12,
+    "evaluation_max_steps": 20,
+    "linear_config": {
+      "epochs": 20,
+      "learning_rate": 0.1,
+      "batch_size": 64,
+      "l2": 0.0001,
+      "validation_split": 0.2,
+      "seed": 20260606
+    }
+  }
+}

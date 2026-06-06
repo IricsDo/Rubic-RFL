@@ -1,0 +1,1019 @@
+{
+  "cases": [
+    {
+      "depth": 1,
+      "sample_index": 0,
+      "scramble": [
+        "F'"
+      ],
+      "seed": 1859376643
+    },
+    {
+      "depth": 1,
+      "sample_index": 1,
+      "scramble": [
+        "U"
+      ],
+      "seed": 776583542
+    },
+    {
+      "depth": 1,
+      "sample_index": 2,
+      "scramble": [
+        "F"
+      ],
+      "seed": 431524653
+    },
+    {
+      "depth": 1,
+      "sample_index": 3,
+      "scramble": [
+        "D2"
+      ],
+      "seed": 654551500
+    },
+    {
+      "depth": 1,
+      "sample_index": 4,
+      "scramble": [
+        "R'"
+      ],
+      "seed": 76043960
+    },
+    {
+      "depth": 1,
+      "sample_index": 5,
+      "scramble": [
+        "B"
+      ],
+      "seed": 1422136728
+    },
+    {
+      "depth": 1,
+      "sample_index": 6,
+      "scramble": [
+        "L'"
+      ],
+      "seed": 687904562
+    },
+    {
+      "depth": 1,
+      "sample_index": 7,
+      "scramble": [
+        "R'"
+      ],
+      "seed": 17432545
+    },
+    {
+      "depth": 1,
+      "sample_index": 8,
+      "scramble": [
+        "U2"
+      ],
+      "seed": 40665693
+    },
+    {
+      "depth": 1,
+      "sample_index": 9,
+      "scramble": [
+        "F2"
+      ],
+      "seed": 1901002890
+    },
+    {
+      "depth": 1,
+      "sample_index": 10,
+      "scramble": [
+        "L"
+      ],
+      "seed": 194848160
+    },
+    {
+      "depth": 1,
+      "sample_index": 11,
+      "scramble": [
+        "U'"
+      ],
+      "seed": 98622751
+    },
+    {
+      "depth": 1,
+      "sample_index": 12,
+      "scramble": [
+        "L'"
+      ],
+      "seed": 1758974566
+    },
+    {
+      "depth": 1,
+      "sample_index": 13,
+      "scramble": [
+        "U"
+      ],
+      "seed": 1843156728
+    },
+    {
+      "depth": 1,
+      "sample_index": 14,
+      "scramble": [
+        "U'"
+      ],
+      "seed": 1170270034
+    },
+    {
+      "depth": 1,
+      "sample_index": 15,
+      "scramble": [
+        "B2"
+      ],
+      "seed": 217539056
+    },
+    {
+      "depth": 1,
+      "sample_index": 16,
+      "scramble": [
+        "B'"
+      ],
+      "seed": 422232522
+    },
+    {
+      "depth": 1,
+      "sample_index": 17,
+      "scramble": [
+        "L"
+      ],
+      "seed": 91356381
+    },
+    {
+      "depth": 1,
+      "sample_index": 18,
+      "scramble": [
+        "F2"
+      ],
+      "seed": 934704375
+    },
+    {
+      "depth": 1,
+      "sample_index": 19,
+      "scramble": [
+        "R"
+      ],
+      "seed": 1088946993
+    },
+    {
+      "depth": 2,
+      "sample_index": 0,
+      "scramble": [
+        "D",
+        "L'"
+      ],
+      "seed": 531682808
+    },
+    {
+      "depth": 2,
+      "sample_index": 1,
+      "scramble": [
+        "R",
+        "B'"
+      ],
+      "seed": 1148415201
+    },
+    {
+      "depth": 2,
+      "sample_index": 2,
+      "scramble": [
+        "B",
+        "D2"
+      ],
+      "seed": 1025139660
+    },
+    {
+      "depth": 2,
+      "sample_index": 3,
+      "scramble": [
+        "F'",
+        "U'"
+      ],
+      "seed": 402896566
+    },
+    {
+      "depth": 2,
+      "sample_index": 4,
+      "scramble": [
+        "U2",
+        "R'"
+      ],
+      "seed": 983471313
+    },
+    {
+      "depth": 2,
+      "sample_index": 5,
+      "scramble": [
+        "U'",
+        "F"
+      ],
+      "seed": 1727767213
+    },
+    {
+      "depth": 2,
+      "sample_index": 6,
+      "scramble": [
+        "R2",
+        "U2"
+      ],
+      "seed": 2132411703
+    },
+    {
+      "depth": 2,
+      "sample_index": 7,
+      "scramble": [
+        "U2",
+        "F"
+      ],
+      "seed": 2030384556
+    },
+    {
+      "depth": 2,
+      "sample_index": 8,
+      "scramble": [
+        "D",
+        "F"
+      ],
+      "seed": 793979802
+    },
+    {
+      "depth": 2,
+      "sample_index": 9,
+      "scramble": [
+        "F'",
+        "R"
+      ],
+      "seed": 1742215369
+    },
+    {
+      "depth": 2,
+      "sample_index": 10,
+      "scramble": [
+        "L'",
+        "F'"
+      ],
+      "seed": 822423696
+    },
+    {
+      "depth": 2,
+      "sample_index": 11,
+      "scramble": [
+        "D",
+        "L2"
+      ],
+      "seed": 1894812672
+    },
+    {
+      "depth": 2,
+      "sample_index": 12,
+      "scramble": [
+        "U2",
+        "L'"
+      ],
+      "seed": 839140366
+    },
+    {
+      "depth": 2,
+      "sample_index": 13,
+      "scramble": [
+        "R2",
+        "F'"
+      ],
+      "seed": 3487055
+    },
+    {
+      "depth": 2,
+      "sample_index": 14,
+      "scramble": [
+        "F2",
+        "D'"
+      ],
+      "seed": 1458237327
+    },
+    {
+      "depth": 2,
+      "sample_index": 15,
+      "scramble": [
+        "B'",
+        "U2"
+      ],
+      "seed": 1216060053
+    },
+    {
+      "depth": 2,
+      "sample_index": 16,
+      "scramble": [
+        "L2",
+        "F"
+      ],
+      "seed": 882206713
+    },
+    {
+      "depth": 2,
+      "sample_index": 17,
+      "scramble": [
+        "B",
+        "R2"
+      ],
+      "seed": 1220627630
+    },
+    {
+      "depth": 2,
+      "sample_index": 18,
+      "scramble": [
+        "D2",
+        "L'"
+      ],
+      "seed": 491149694
+    },
+    {
+      "depth": 2,
+      "sample_index": 19,
+      "scramble": [
+        "L",
+        "U"
+      ],
+      "seed": 2099238699
+    },
+    {
+      "depth": 3,
+      "sample_index": 0,
+      "scramble": [
+        "D'",
+        "L2",
+        "B'"
+      ],
+      "seed": 925084311
+    },
+    {
+      "depth": 3,
+      "sample_index": 1,
+      "scramble": [
+        "B",
+        "R",
+        "U2"
+      ],
+      "seed": 463389736
+    },
+    {
+      "depth": 3,
+      "sample_index": 2,
+      "scramble": [
+        "B2",
+        "U2",
+        "B2"
+      ],
+      "seed": 686083154
+    },
+    {
+      "depth": 3,
+      "sample_index": 3,
+      "scramble": [
+        "B'",
+        "D'",
+        "B2"
+      ],
+      "seed": 1949614007
+    },
+    {
+      "depth": 3,
+      "sample_index": 4,
+      "scramble": [
+        "F2",
+        "R'",
+        "F2"
+      ],
+      "seed": 1732956229
+    },
+    {
+      "depth": 3,
+      "sample_index": 5,
+      "scramble": [
+        "F2",
+        "R",
+        "D'"
+      ],
+      "seed": 407738500
+    },
+    {
+      "depth": 3,
+      "sample_index": 6,
+      "scramble": [
+        "F2",
+        "D'",
+        "R"
+      ],
+      "seed": 874057288
+    },
+    {
+      "depth": 3,
+      "sample_index": 7,
+      "scramble": [
+        "R'",
+        "F2",
+        "D'"
+      ],
+      "seed": 626857394
+    },
+    {
+      "depth": 3,
+      "sample_index": 8,
+      "scramble": [
+        "B",
+        "L",
+        "F"
+      ],
+      "seed": 1941310098
+    },
+    {
+      "depth": 3,
+      "sample_index": 9,
+      "scramble": [
+        "D2",
+        "B",
+        "D'"
+      ],
+      "seed": 1755087184
+    },
+    {
+      "depth": 3,
+      "sample_index": 10,
+      "scramble": [
+        "R'",
+        "U",
+        "B'"
+      ],
+      "seed": 1760225094
+    },
+    {
+      "depth": 3,
+      "sample_index": 11,
+      "scramble": [
+        "B'",
+        "L",
+        "D2"
+      ],
+      "seed": 1739227754
+    },
+    {
+      "depth": 3,
+      "sample_index": 12,
+      "scramble": [
+        "F'",
+        "R'",
+        "B"
+      ],
+      "seed": 810645951
+    },
+    {
+      "depth": 3,
+      "sample_index": 13,
+      "scramble": [
+        "U'",
+        "L2",
+        "F2"
+      ],
+      "seed": 833714737
+    },
+    {
+      "depth": 3,
+      "sample_index": 14,
+      "scramble": [
+        "L",
+        "F",
+        "R'"
+      ],
+      "seed": 1503772435
+    },
+    {
+      "depth": 3,
+      "sample_index": 15,
+      "scramble": [
+        "U'",
+        "R",
+        "B"
+      ],
+      "seed": 492507713
+    },
+    {
+      "depth": 3,
+      "sample_index": 16,
+      "scramble": [
+        "L'",
+        "D'",
+        "L2"
+      ],
+      "seed": 476074228
+    },
+    {
+      "depth": 3,
+      "sample_index": 17,
+      "scramble": [
+        "B",
+        "D",
+        "F2"
+      ],
+      "seed": 1770676289
+    },
+    {
+      "depth": 3,
+      "sample_index": 18,
+      "scramble": [
+        "F'",
+        "R'",
+        "B2"
+      ],
+      "seed": 1836029057
+    },
+    {
+      "depth": 3,
+      "sample_index": 19,
+      "scramble": [
+        "F'",
+        "D'",
+        "R"
+      ],
+      "seed": 717193640
+    },
+    {
+      "depth": 4,
+      "sample_index": 0,
+      "scramble": [
+        "D'",
+        "F",
+        "D",
+        "R2"
+      ],
+      "seed": 1510670737
+    },
+    {
+      "depth": 4,
+      "sample_index": 1,
+      "scramble": [
+        "R",
+        "D'",
+        "L2",
+        "B2"
+      ],
+      "seed": 699591771
+    },
+    {
+      "depth": 4,
+      "sample_index": 2,
+      "scramble": [
+        "F2",
+        "R'",
+        "F2",
+        "U'"
+      ],
+      "seed": 1206088907
+    },
+    {
+      "depth": 4,
+      "sample_index": 3,
+      "scramble": [
+        "R2",
+        "D'",
+        "F",
+        "D2"
+      ],
+      "seed": 816683666
+    },
+    {
+      "depth": 4,
+      "sample_index": 4,
+      "scramble": [
+        "F",
+        "R2",
+        "F",
+        "L'"
+      ],
+      "seed": 607837563
+    },
+    {
+      "depth": 4,
+      "sample_index": 5,
+      "scramble": [
+        "R'",
+        "D'",
+        "R'",
+        "U"
+      ],
+      "seed": 1232760724
+    },
+    {
+      "depth": 4,
+      "sample_index": 6,
+      "scramble": [
+        "U'",
+        "R'",
+        "F",
+        "R'"
+      ],
+      "seed": 1265839716
+    },
+    {
+      "depth": 4,
+      "sample_index": 7,
+      "scramble": [
+        "U",
+        "R",
+        "B2",
+        "D2"
+      ],
+      "seed": 1700225179
+    },
+    {
+      "depth": 4,
+      "sample_index": 8,
+      "scramble": [
+        "D2",
+        "F",
+        "D'",
+        "L"
+      ],
+      "seed": 1740357991
+    },
+    {
+      "depth": 4,
+      "sample_index": 9,
+      "scramble": [
+        "U",
+        "F2",
+        "R",
+        "D'"
+      ],
+      "seed": 140711635
+    },
+    {
+      "depth": 4,
+      "sample_index": 10,
+      "scramble": [
+        "U",
+        "F",
+        "R'",
+        "U2"
+      ],
+      "seed": 2119280643
+    },
+    {
+      "depth": 4,
+      "sample_index": 11,
+      "scramble": [
+        "L'",
+        "D",
+        "R2",
+        "U'"
+      ],
+      "seed": 1041716591
+    },
+    {
+      "depth": 4,
+      "sample_index": 12,
+      "scramble": [
+        "R2",
+        "D'",
+        "L2",
+        "B'"
+      ],
+      "seed": 1836474832
+    },
+    {
+      "depth": 4,
+      "sample_index": 13,
+      "scramble": [
+        "F",
+        "D",
+        "F'",
+        "L2"
+      ],
+      "seed": 101744953
+    },
+    {
+      "depth": 4,
+      "sample_index": 14,
+      "scramble": [
+        "L",
+        "B",
+        "L",
+        "U2"
+      ],
+      "seed": 143876475
+    },
+    {
+      "depth": 4,
+      "sample_index": 15,
+      "scramble": [
+        "U",
+        "R2",
+        "D2",
+        "L'"
+      ],
+      "seed": 859349600
+    },
+    {
+      "depth": 4,
+      "sample_index": 16,
+      "scramble": [
+        "B'",
+        "U2",
+        "F'",
+        "R"
+      ],
+      "seed": 409002091
+    },
+    {
+      "depth": 4,
+      "sample_index": 17,
+      "scramble": [
+        "U",
+        "F2",
+        "D2",
+        "F2"
+      ],
+      "seed": 1120056704
+    },
+    {
+      "depth": 4,
+      "sample_index": 18,
+      "scramble": [
+        "L2",
+        "F2",
+        "R",
+        "D'"
+      ],
+      "seed": 980611750
+    },
+    {
+      "depth": 4,
+      "sample_index": 19,
+      "scramble": [
+        "F2",
+        "D'",
+        "R'",
+        "F'"
+      ],
+      "seed": 965138480
+    },
+    {
+      "depth": 5,
+      "sample_index": 0,
+      "scramble": [
+        "U2",
+        "L2",
+        "B'",
+        "L'",
+        "F2"
+      ],
+      "seed": 932527699
+    },
+    {
+      "depth": 5,
+      "sample_index": 1,
+      "scramble": [
+        "L'",
+        "D",
+        "R'",
+        "D'",
+        "B'"
+      ],
+      "seed": 534218829
+    },
+    {
+      "depth": 5,
+      "sample_index": 2,
+      "scramble": [
+        "R'",
+        "D2",
+        "L'",
+        "B'",
+        "D2"
+      ],
+      "seed": 980375069
+    },
+    {
+      "depth": 5,
+      "sample_index": 3,
+      "scramble": [
+        "B'",
+        "D2",
+        "B",
+        "L2",
+        "B'"
+      ],
+      "seed": 663423665
+    },
+    {
+      "depth": 5,
+      "sample_index": 4,
+      "scramble": [
+        "D'",
+        "B'",
+        "D2",
+        "F",
+        "D2"
+      ],
+      "seed": 1289310427
+    },
+    {
+      "depth": 5,
+      "sample_index": 5,
+      "scramble": [
+        "B",
+        "D2",
+        "B2",
+        "U",
+        "F"
+      ],
+      "seed": 1115082332
+    },
+    {
+      "depth": 5,
+      "sample_index": 6,
+      "scramble": [
+        "R2",
+        "F",
+        "R",
+        "B'",
+        "R'"
+      ],
+      "seed": 924042567
+    },
+    {
+      "depth": 5,
+      "sample_index": 7,
+      "scramble": [
+        "F",
+        "R'",
+        "B'",
+        "U",
+        "F'"
+      ],
+      "seed": 1431258066
+    },
+    {
+      "depth": 5,
+      "sample_index": 8,
+      "scramble": [
+        "F",
+        "L2",
+        "B2",
+        "R'",
+        "B2"
+      ],
+      "seed": 38808804
+    },
+    {
+      "depth": 5,
+      "sample_index": 9,
+      "scramble": [
+        "R2",
+        "U2",
+        "F2",
+        "R",
+        "U"
+      ],
+      "seed": 1885109566
+    },
+    {
+      "depth": 5,
+      "sample_index": 10,
+      "scramble": [
+        "F2",
+        "L2",
+        "U2",
+        "F2",
+        "R"
+      ],
+      "seed": 1686610603
+    },
+    {
+      "depth": 5,
+      "sample_index": 11,
+      "scramble": [
+        "L'",
+        "D2",
+        "B",
+        "L'",
+        "U"
+      ],
+      "seed": 1516932278
+    },
+    {
+      "depth": 5,
+      "sample_index": 12,
+      "scramble": [
+        "B",
+        "L",
+        "B'",
+        "L'",
+        "F'"
+      ],
+      "seed": 824918519
+    },
+    {
+      "depth": 5,
+      "sample_index": 13,
+      "scramble": [
+        "B",
+        "D'",
+        "F'",
+        "U2",
+        "F2"
+      ],
+      "seed": 1765451707
+    },
+    {
+      "depth": 5,
+      "sample_index": 14,
+      "scramble": [
+        "F'",
+        "D'",
+        "R",
+        "F",
+        "D'"
+      ],
+      "seed": 161162689
+    },
+    {
+      "depth": 5,
+      "sample_index": 15,
+      "scramble": [
+        "U2",
+        "F2",
+        "D'",
+        "B'",
+        "R2"
+      ],
+      "seed": 899560964
+    },
+    {
+      "depth": 5,
+      "sample_index": 16,
+      "scramble": [
+        "D2",
+        "F",
+        "D2",
+        "B2",
+        "L'"
+      ],
+      "seed": 387824124
+    },
+    {
+      "depth": 5,
+      "sample_index": 17,
+      "scramble": [
+        "F'",
+        "D",
+        "L",
+        "F",
+        "R2"
+      ],
+      "seed": 1506877925
+    },
+    {
+      "depth": 5,
+      "sample_index": 18,
+      "scramble": [
+        "B",
+        "R2",
+        "D'",
+        "R2",
+        "B"
+      ],
+      "seed": 1183324763
+    },
+    {
+      "depth": 5,
+      "sample_index": 19,
+      "scramble": [
+        "D2",
+        "B'",
+        "D",
+        "R2",
+        "D"
+      ],
+      "seed": 1847920492
+    }
+  ],
+  "config": {
+    "beam_width": 10,
+    "depths": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "max_depth": 20,
+    "samples_per_depth": 20,
+    "seed": 20260610,
+    "top_k": 8
+  },
+  "suite": "heldout-shallow"
+}

@@ -19,7 +19,7 @@ Default outputs are ignored by source control:
 
 - `datasets/baseline-depth-1-2-3.jsonl`
 - `checkpoints/linear-baseline-depth-1-2-3.npz`
-- `checkpoints/mlp-baseline-depth-1-2-3.npz`
+- `checkpoints/lightweight-linear-axis-samples-28-heldout/linear-policy.npz`
 - `reports/baseline-experiment.json`
 
 ## Report Shape
@@ -41,7 +41,7 @@ default hyperparameters and canonical depth 1-2 data, the MLP checkpoint is
 ranked first:
 
 ```powershell
-$env:RUBIC_RL_MODEL_PATH="checkpoints\mlp-baseline-depth-1-2-3.npz"
+$env:RUBIC_RL_MODEL_PATH="checkpoints\lightweight-linear-axis-samples-28-heldout\linear-policy.npz"
 $env:RUBIC_RL_MAX_STEPS="30"
 ```
 

@@ -26,7 +26,7 @@ single-action probability distribution.
 ## Backend Configuration
 
 ```powershell
-$env:RUBIC_RL_MODEL_PATH="checkpoints\mlp-baseline-depth-1-2-3.npz"
+$env:RUBIC_RL_MODEL_PATH="checkpoints\lightweight-linear-axis-samples-28-heldout\linear-policy.npz"
 $env:RUBIC_RL_POLICY_TYPE="auto"
 $env:RUBIC_RL_POLICY_DEVICE="cpu"
 $env:RUBIC_RL_MAX_STEPS="30"

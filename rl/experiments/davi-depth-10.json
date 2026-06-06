@@ -1,0 +1,30 @@
+{
+  "name": "davi-depth-10",
+  "type": "davi",
+  "description": "Tracked DAVI value-learning run up to scramble depth 10.",
+  "config": {
+    "iterations": 10000,
+    "batch_size": 1000,
+    "max_scramble_depth": 10,
+    "min_scramble_depth": 1,
+    "solved_fraction": 0.05,
+    "learning_rate": 0.001,
+    "weight_decay": 0.00001,
+    "loss_type": "smooth_l1",
+    "huber_delta": 1.0,
+    "policy_loss_weight": 0.1,
+    "grad_clip_norm": 1.0,
+    "target_update_interval": 200,
+    "checkpoint_interval": 200,
+    "curriculum": true,
+    "curriculum_start": 1,
+    "curriculum_interval": 150,
+    "hard_depth_fraction": 0.2,
+    "hidden_dim": 512,
+    "residual_blocks": 6,
+    "dropout": 0.0,
+    "seed": 20260603,
+    "model_version": "torch-value-davi-depth-10",
+    "device": "cpu"
+  }
+}

@@ -36,7 +36,7 @@ DEFAULT_REPORT_OUT = Path("../reports/baseline-experiment.json")
 class BaselineExperimentConfig:
     dataset_out: Path = DEFAULT_DATASET_OUT
     linear_model_out: Path = DEFAULT_LINEAR_MODEL_OUT
-    mlp_model_out: Path = DEFAULT_MLP_MODEL_OUT
+    mlp_model_out: Path | None = DEFAULT_MLP_MODEL_OUT
     report_out: Path | None = DEFAULT_REPORT_OUT
     depths: tuple[int, ...] = (1, 2, 3)
     samples_per_depth: int = 100
@@ -47,6 +47,7 @@ class BaselineExperimentConfig:
     evaluation_max_steps: int = 30
     linear_config: TrainingConfig = field(default_factory=TrainingConfig)
     mlp_config: MLPTrainingConfig = field(default_factory=MLPTrainingConfig)
+    train_mlp: bool = True
 
     def __post_init__(self) -> None:
         depths = tuple(int(depth) for depth in self.depths)
@@ -66,7 +67,11 @@ class BaselineExperimentConfig:
 
         object.__setattr__(self, "dataset_out", Path(self.dataset_out))
         object.__setattr__(self, "linear_model_out", Path(self.linear_model_out))
-        object.__setattr__(self, "mlp_model_out", Path(self.mlp_model_out))
+        object.__setattr__(
+            self,
+            "mlp_model_out",
+            None if self.mlp_model_out is None else Path(self.mlp_model_out),
+        )
         object.__setattr__(
             self,
             "report_out",
@@ -111,8 +116,44 @@ def run_baseline_experiment(config: BaselineExperimentConfig) -> dict[str, Any]:
     linear_model, linear_result = train_policy(records, config.linear_config)
     _save_model(linear_model, config.linear_model_out)
 
-    mlp_model, mlp_result = train_mlp_policy(records, config.mlp_config)
-    _save_model(mlp_model, config.mlp_model_out)
+    named_policies = [
+        NamedPolicy(
+            "linear",
+            linear_model,
+            model_path=str(config.linear_model_out),
+            policy_type="linear",
+        )
+    ]
+    training_report: dict[str, Any] = {
+        "linear": {
+            "model_out": str(config.linear_model_out),
+            "config": _config_to_json_dict(config.linear_config),
+            "result": linear_result.to_dict(),
+        }
+    }
+    model_paths = {
+        "linear": config.linear_model_out,
+    }
+
+    if config.train_mlp:
+        if config.mlp_model_out is None:
+            raise ValueError("mlp_model_out is required when train_mlp is enabled")
+        mlp_model, mlp_result = train_mlp_policy(records, config.mlp_config)
+        _save_model(mlp_model, config.mlp_model_out)
+        named_policies.append(
+            NamedPolicy(
+                "mlp",
+                mlp_model,
+                model_path=str(config.mlp_model_out),
+                policy_type="mlp",
+            )
+        )
+        training_report["mlp"] = {
+            "model_out": str(config.mlp_model_out),
+            "config": _config_to_json_dict(config.mlp_config),
+            "result": mlp_result.to_dict(),
+        }
+        model_paths["mlp"] = config.mlp_model_out
 
     evaluation_config = PolicyEvaluationConfig(
         depths=config.depths,
@@ -120,32 +161,12 @@ def run_baseline_experiment(config: BaselineExperimentConfig) -> dict[str, Any]:
         max_steps=config.evaluation_max_steps,
         seed=config.seed,
     )
-    comparison = compare_loaded_policies(
-        [
-            NamedPolicy(
-                "linear",
-                linear_model,
-                model_path=str(config.linear_model_out),
-                policy_type="linear",
-            ),
-            NamedPolicy(
-                "mlp",
-                mlp_model,
-                model_path=str(config.mlp_model_out),
-                policy_type="mlp",
-            ),
-        ],
-        evaluation_config,
-    )
-    model_paths = {
-        "linear": config.linear_model_out,
-        "mlp": config.mlp_model_out,
-    }
+    comparison = compare_loaded_policies(named_policies, evaluation_config)
     recommended_label = str(comparison["ranking"][0]["label"])
     recommended_model_path = _path_for_backend(model_paths[recommended_label])
 
     report = {
-        "experiment": "supervised-baseline",
+        "experiment": "supervised-baseline" if config.train_mlp else "supervised-linear",
         "dataset": {
             "path": str(config.dataset_out),
             "records": len(records),
@@ -162,18 +183,7 @@ def run_baseline_experiment(config: BaselineExperimentConfig) -> dict[str, Any]:
             "include_solved": config.include_solved,
             "seed": config.seed,
         },
-        "training": {
-            "linear": {
-                "model_out": str(config.linear_model_out),
-                "config": _config_to_json_dict(config.linear_config),
-                "result": linear_result.to_dict(),
-            },
-            "mlp": {
-                "model_out": str(config.mlp_model_out),
-                "config": _config_to_json_dict(config.mlp_config),
-                "result": mlp_result.to_dict(),
-            },
-        },
+        "training": training_report,
         "comparison": comparison,
         "backend": {
             "recommended_label": recommended_label,

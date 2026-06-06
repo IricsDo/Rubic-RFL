@@ -1,0 +1,25 @@
+{
+  "name": "adi-depth-1-10",
+  "type": "adi",
+  "description": "Regularized cumulative ADI run covering depth 1 through 10.",
+  "config": {
+    "depths": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "samples_per_depth": 2000,
+    "canonical_depths": [1, 2],
+    "include_solved": true,
+    "iterations": 4,
+    "epochs_per_iteration": 5,
+    "batch_size": 512,
+    "learning_rate": 0.0005,
+    "weight_decay": 0.001,
+    "value_loss_weight": 0.25,
+    "validation_split": 0.2,
+    "hidden_dim": 256,
+    "residual_blocks": 2,
+    "dropout": 0.1,
+    "seed": 20260531,
+    "model_version": "torch-policy-value-adi-depth-1-10-regularized",
+    "device": "cpu",
+    "train_on_cumulative_records": true
+  }
+}

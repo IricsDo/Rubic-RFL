@@ -1,0 +1,29 @@
+{
+  "name": "davi-smoke",
+  "type": "davi",
+  "description": "Small DAVI smoke run for local validation of the value-learning path.",
+  "config": {
+    "iterations": 20,
+    "batch_size": 64,
+    "max_scramble_depth": 5,
+    "min_scramble_depth": 1,
+    "solved_fraction": 0.1,
+    "learning_rate": 0.001,
+    "weight_decay": 0.00001,
+    "loss_type": "mse",
+    "huber_delta": 1.0,
+    "policy_loss_weight": 0.0,
+    "target_update_interval": 10,
+    "checkpoint_interval": 10,
+    "curriculum": true,
+    "curriculum_start": 1,
+    "curriculum_interval": 5,
+    "hard_depth_fraction": 0.0,
+    "hidden_dim": 128,
+    "residual_blocks": 2,
+    "dropout": 0.0,
+    "seed": 20260606,
+    "model_version": "torch-value-davi-smoke",
+    "device": "cpu"
+  }
+}

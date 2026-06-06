@@ -188,7 +188,8 @@ class RLSolver:
             default_path = (
                 _project_root()
                 / "checkpoints"
-                / "mlp-baseline-depth-1-2-3.npz"
+                / "lightweight-linear-axis-samples-28-heldout"
+                / "linear-policy.npz"
             )
             return default_path
 

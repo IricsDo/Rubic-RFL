@@ -1,0 +1,40 @@
+{
+  "name": "lightweight-linear-axis-samples-28-heldout",
+  "type": "linear",
+  "description": "One-axis linear tuning run that changes only samples_per_depth and evaluates on held-out shallow cases.",
+  "benchmark": {
+    "suite": "shallow",
+    "cases_in": "rl/benchmarks/heldout-shallow.json",
+    "compare_runs": [
+      {
+        "run": "lightweight-mlp-smoke",
+        "type": "baseline",
+        "label_prefix": "lightweight-smoke",
+        "models": ["linear"]
+      },
+      {
+        "run": "lightweight-linear-only-promote",
+        "type": "linear",
+        "label_prefix": "linear-promote",
+        "models": ["linear"]
+      }
+    ]
+  },
+  "config": {
+    "depths": [1, 2, 3],
+    "samples_per_depth": 28,
+    "canonical_depths": [1, 2],
+    "include_solved": true,
+    "seed": 20260611,
+    "evaluation_samples_per_depth": 12,
+    "evaluation_max_steps": 20,
+    "linear_config": {
+      "epochs": 20,
+      "learning_rate": 0.1,
+      "batch_size": 64,
+      "l2": 0.0001,
+      "validation_split": 0.2,
+      "seed": 20260611
+    }
+  }
+}

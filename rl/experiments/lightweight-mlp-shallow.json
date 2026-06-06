@@ -1,0 +1,46 @@
+{
+  "name": "lightweight-mlp-shallow",
+  "type": "baseline",
+  "description": "Lightweight supervised policy plus search benchmarked on shallow scrambles for practical model selection.",
+  "benchmark": {
+    "suite": "shallow",
+    "compare_runs": [
+      {
+        "run": "lightweight-mlp-smoke",
+        "type": "baseline",
+        "label_prefix": "lightweight-smoke"
+      },
+      {
+        "run": "baseline-smoke",
+        "type": "baseline",
+        "label_prefix": "baseline-smoke"
+      }
+    ]
+  },
+  "config": {
+    "depths": [1, 2, 3, 4, 5],
+    "samples_per_depth": 24,
+    "canonical_depths": [1, 2],
+    "include_solved": true,
+    "seed": 20260606,
+    "evaluation_samples_per_depth": 10,
+    "evaluation_max_steps": 20,
+    "linear_config": {
+      "epochs": 20,
+      "learning_rate": 0.1,
+      "batch_size": 64,
+      "l2": 0.0001,
+      "validation_split": 0.2,
+      "seed": 20260606
+    },
+    "mlp_config": {
+      "hidden_units": 24,
+      "epochs": 40,
+      "learning_rate": 0.03,
+      "batch_size": 64,
+      "l2": 0.0001,
+      "validation_split": 0.2,
+      "seed": 20260606
+    }
+  }
+}

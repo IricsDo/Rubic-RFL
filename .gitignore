@@ -67,11 +67,16 @@ reports/*adi*.json
 reports/mlp-search-evaluation-depth-*.json
 .tmp/
 rl/.tmp/
+tests/generated/
 replays/sessions/
 backend/replays/sessions/
 backend/tests/.tmp-write-check/
 rl/tests/generated/
 rl/tests/generated/adi-training/
+datasets/*/
+checkpoints/*/
+!checkpoints/lightweight-linear-axis-samples-28-heldout/
+!checkpoints/lightweight-linear-axis-samples-28-heldout/linear-policy.npz
 
 # Translations
 *.mo

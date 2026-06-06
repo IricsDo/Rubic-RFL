@@ -75,6 +75,42 @@ class BaselineExperimentTests(unittest.TestCase):
         self.assertEqual(load_policy(config.linear_model_out).action_count, 18)
         self.assertEqual(load_policy(config.mlp_model_out).action_count, 18)
 
+    def test_run_baseline_experiment_can_skip_mlp_training(self):
+        root = Path("tests/generated/linear-experiment")
+        root.mkdir(parents=True, exist_ok=True)
+        config = BaselineExperimentConfig(
+            dataset_out=root / "dataset.jsonl",
+            linear_model_out=root / "linear.npz",
+            mlp_model_out=None,
+            report_out=root / "report.json",
+            depths=(1,),
+            samples_per_depth=2,
+            canonical_depths=(1,),
+            include_solved=True,
+            seed=321,
+            evaluation_samples_per_depth=1,
+            evaluation_max_steps=1,
+            linear_config=TrainingConfig(
+                epochs=1,
+                learning_rate=0.1,
+                batch_size=2,
+                validation_split=0.0,
+                seed=321,
+            ),
+            train_mlp=False,
+        )
+
+        report = run_baseline_experiment(config)
+
+        self.assertEqual(report["experiment"], "supervised-linear")
+        self.assertEqual(set(report["training"]), {"linear"})
+        self.assertEqual(
+            {entry["label"] for entry in report["comparison"]["ranking"]},
+            {"linear"},
+        )
+        self.assertEqual(report["backend"]["recommended_label"], "linear")
+        self.assertFalse((root / "mlp.npz").exists())
+
 
 if __name__ == "__main__":
     unittest.main()
