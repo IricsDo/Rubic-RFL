@@ -101,6 +101,15 @@ python -m rubic_rl.evaluation.davi_eval --model ..\checkpoints\torch-value-davi.
 
 For the official promotion gate, use the same `weight`, `batch-expansion`, `max-nodes`, and `seed`, then raise `--samples-per-depth` to `50`. Changing search parameters changes the solver budget, so do not compare two checkpoints unless these values match.
 
+Long DAVI evaluations are CPU/RAM-heavy because Weighted A* stores large search frontiers on the host while the GPU only scores batches of states. To avoid losing progress when Colab disconnects, always write `--out` and resume the same report:
+
+```powershell
+cd D:\WorkSpaces\MyCode\GithubProject\Rubic-RFL\rl
+python -m rubic_rl.evaluation.davi_eval --model ..\checkpoints\torch-value-davi.pt --depths 15 --samples-per-depth 50 --weight 0.6 --policy-weight 0.25 --batch-expansion 1000 --max-nodes 1000000 --device cuda --out ..\reports\davi-eval-depth-15-policy-v03-s50.json --resume --flush-every 1
+```
+
+`--flush-every 1` saves after every case. If the runtime stops, run the same command again; completed `(depth, index)` cases are skipped. Keep the config unchanged when using `--resume`.
+
 After DAVI v0.3 policy training, evaluate the policy-aware solver with a fixed `policy-weight`:
 
 ```powershell

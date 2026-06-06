@@ -10,6 +10,7 @@ except ModuleNotFoundError:
 if torch is not None:
     from app.cube import Cube
     from rubic_rl import cube_ops as C
+    from rubic_rl.evaluation.davi_eval import _summarize_cases
     from rubic_rl.search import weighted_astar_solve
     from rubic_rl.training.davi import DAVIConfig, _loss, _sample_training_states
 
@@ -74,6 +75,21 @@ class DAVITrainingTests(unittest.TestCase):
         self.assertTrue(result["solved"])
         self.assertEqual(result["moves"], ("U'", "R'"))
         self.assertLessEqual(result["expanded"], 2)
+
+    def test_davi_eval_summary_uses_completed_cases(self):
+        cases = [
+            {"depth": 15, "index": 0, "solved": True, "length": 10, "expanded": 100, "ms": 1000.0},
+            {"depth": 15, "index": 1, "solved": False, "length": 0, "expanded": 200, "ms": 2000.0},
+            {"depth": 16, "index": 0, "solved": True, "length": 12, "expanded": 300, "ms": 3000.0},
+        ]
+
+        summary = _summarize_cases(cases, depths=(15, 16))
+
+        self.assertEqual(summary["overall"]["samples"], 3)
+        self.assertAlmostEqual(summary["overall"]["solve_rate"], 2 / 3)
+        self.assertEqual(summary["by_depth"]["15"]["samples"], 2)
+        self.assertAlmostEqual(summary["by_depth"]["15"]["solve_rate"], 0.5)
+        self.assertEqual(summary["by_depth"]["15"]["avg_len_solved"], 10.0)
 
 
 if __name__ == "__main__":
