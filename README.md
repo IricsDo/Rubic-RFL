@@ -37,8 +37,7 @@ backend/   Python API, cube engine, solver interfaces, tests
 frontend/  Static MVP web app
 rl/        Reinforcement-learning research placeholders
 docs/      Architecture decisions and implementation notes
-docker-compose.yml  Local container orchestration for Phase 11
-deploy/    Production Compose baseline and image publishing notes
+deploy/    Active production Compose baseline and image publishing notes
 ```
 
 ## Development Commands
@@ -145,39 +144,30 @@ runs backend, PostgreSQL integration, frontend static smoke, and RL tests,
 writes combined backend/RL coverage XML and JSON reports, executes API,
 WebSocket, backend load, external network load, and frontend FPS smoke checks,
 and uploads the generated report files as artifacts. It also validates the
-Docker Compose configuration, monitoring profile, host-port override,
-production Compose baseline, production monitoring profile, deployment env
-schema, and Prometheus rules, builds the backend and frontend images, and runs
-Playwright Chromium E2E tests against the static UI.
+production Docker Compose baseline, production monitoring profile, deployment
+env schema, and Prometheus rules, builds the backend and frontend images, and
+runs Playwright Chromium E2E tests against the static UI.
 
-Run the containerized stack:
+Run the active production containerized stack:
 
 ```powershell
-Copy-Item .env.example .env
-docker compose up --build
+.\.venv\Scripts\python.exe tools\prepare_production_env.py --generate-secrets --force
+docker compose --env-file deploy\production.env -f deploy\compose.production.yml up -d
 ```
 
-The frontend is available at `http://127.0.0.1:5173`, and the backend health
+The frontend is available at `http://127.0.0.1`, and the backend health
 endpoint is available at `http://127.0.0.1:8000/health`. See
 `docs/phase-11-deployment.md` for service details and persistence notes.
-PostgreSQL and Redis stay private to the Compose network by default. If you
-need host access to the container database, add the host-port override:
-
-```powershell
-docker compose -f docker-compose.yml -f docker-compose.host-ports.yml up --build
-```
-
-That override binds PostgreSQL to `127.0.0.1:5433`, avoiding the common local
-PostgreSQL conflict on `5432`.
+PostgreSQL and Redis stay private to the Compose network by default.
 
 Run the stack with the monitoring dashboard:
 
 ```powershell
-docker compose --profile monitoring up --build
+docker compose --env-file deploy\production.env -f deploy\compose.production.yml --profile monitoring up -d
 ```
 
 Prometheus is available at `http://127.0.0.1:9090`, and Grafana is available at
-`http://127.0.0.1:3000` with the credentials from `.env`.
+`http://127.0.0.1:3000` with the credentials from `deploy\production.env`.
 
 Validate a production env file before release:
 

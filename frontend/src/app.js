@@ -10,6 +10,26 @@ const FACE_TO_AXIS = {
 const AXIS_INDEX = { x: 0, y: 1, z: 2 };
 const SUFFIXES = ["", "'", "2"];
 const ALL_MOVES = FACE_ORDER.flatMap((face) => SUFFIXES.map((suffix) => face + suffix));
+const MOVE_ANIMATION_MS = 420;
+const REPLAY_MOVE_ANIMATION_MS = 360;
+const SCRAMBLE_MOVE_ANIMATION_MS = 90;
+const REPLAY_MOVE_GAP_MS = 90;
+const SCRAMBLE_MOVE_GAP_MS = 26;
+const DEFAULT_ANIMATION_PROFILE = Object.freeze({
+  duration: MOVE_ANIMATION_MS,
+  settleMs: 0,
+  easing: "cubic-bezier(0.2, 0.85, 0.2, 1)",
+});
+const REPLAY_ANIMATION_PROFILE = Object.freeze({
+  duration: REPLAY_MOVE_ANIMATION_MS,
+  settleMs: 50,
+  easing: "cubic-bezier(0.22, 0.72, 0.18, 1)",
+});
+const SCRAMBLE_ANIMATION_PROFILE = Object.freeze({
+  duration: SCRAMBLE_MOVE_ANIMATION_MS,
+  settleMs: 0,
+  easing: "cubic-bezier(0.32, 0.78, 0.22, 1)",
+});
 const DEFAULT_API_BASE = "http://127.0.0.1:8000";
 const MIN_SCRAMBLE_DEPTH = 0;
 const MAX_SCRAMBLE_DEPTH = 30;
@@ -527,6 +547,62 @@ function applyMoves(moves, recordHistory = true) {
   state.validation = null;
 }
 
+function moveAnimationDetails(move) {
+  const value = normalizeMove(move);
+  const face = value[0];
+  const suffix = value.slice(1);
+  const [axis, layerSign] = FACE_TO_AXIS[face];
+  const turns = suffix === "2" ? 2 : suffix === "'" ? -1 : 1;
+  const quarterTurns = -layerSign * turns;
+  return {
+    move: value,
+    face,
+    axis,
+    axisClass: `axis-${axis}`,
+    layerSign,
+    angle: quarterTurns * 90,
+  };
+}
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+async function animateMove(move, commit, profile = DEFAULT_ANIMATION_PROFILE) {
+  const details = moveAnimationDetails(move);
+  const duration = profile.duration || MOVE_ANIMATION_MS;
+  state.animation = {
+    ...details,
+    active: false,
+    duration,
+    easing: profile.easing || DEFAULT_ANIMATION_PROFILE.easing,
+  };
+  renderCube();
+  await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+  const animatedLayer = elements.cube.querySelector(".cube-layer");
+  if (animatedLayer) {
+    state.animation.active = true;
+    animatedLayer.classList.add("is-turning");
+    animatedLayer.style.setProperty("--turn-angle", `${details.angle}deg`);
+  }
+  await delay(duration);
+  commit();
+  if (profile.settleMs) await delay(profile.settleMs);
+  state.animation = null;
+  state.validation = null;
+}
+
+async function animateMoveSequence(moves, commitMove, profile = DEFAULT_ANIMATION_PROFILE, gapMs = 0) {
+  const normalizedMoves = parseMoves(moves);
+  for (const move of normalizedMoves) {
+    await animateMove(move, () => commitMove(move), profile);
+    if (gapMs) await delay(gapMs);
+  }
+  return normalizedMoves;
+}
+
 function isSolved(stickers) {
   return stickers.every((value, index) => value === solvedStickers()[index]);
 }
@@ -856,30 +932,58 @@ function visibleNormals(position) {
   return normals;
 }
 
+function createCubie(position, highlightedMove) {
+  const cubie = document.createElement("div");
+  cubie.className = "cubie";
+  cubie.style.transform = `translate3d(calc(${position[0]} * var(--gap)), calc(${-position[1]} * var(--gap)), calc(${position[2]} * var(--gap)))`;
+
+  visibleNormals(position).forEach((normal) => {
+    const shellFace = document.createElement("div");
+    shellFace.className = `cubie-face ${normalClass(normal)}`;
+    shellFace.setAttribute("aria-hidden", "true");
+    cubie.append(shellFace);
+  });
+
+  visibleNormals(position).forEach((normal) => {
+    const index = locationToIndex.get(key(position, normal));
+    const sticker = state.stickers[index];
+    const stickerLocation = { position, normal };
+    const face = document.createElement("div");
+    face.className = `sticker ${sticker.toLowerCase()} ${normalClass(normal)}`;
+    if (isLocationAffectedByMove(stickerLocation, highlightedMove)) {
+      face.classList.add("rl-highlight");
+    }
+    face.setAttribute("aria-hidden", "true");
+    cubie.append(face);
+  });
+
+  return cubie;
+}
+
 function renderCube() {
   elements.cube.innerHTML = "";
   elements.cube.style.setProperty("--rx", `${view.rx}deg`);
   elements.cube.style.setProperty("--ry", `${view.ry}deg`);
   const highlightedMove = activeRlMoveForHighlight();
+  const animation = state.animation;
+  let animatedLayer = null;
+
+  if (animation) {
+    animatedLayer = document.createElement("div");
+    animatedLayer.className = `cube-layer ${animation.axisClass}${animation.active ? " is-turning" : ""}`;
+    animatedLayer.style.setProperty("--turn-angle", `${animation.active ? animation.angle : 0}deg`);
+    animatedLayer.style.setProperty("--turn-duration", `${animation.duration || MOVE_ANIMATION_MS}ms`);
+    animatedLayer.style.setProperty("--turn-easing", animation.easing || DEFAULT_ANIMATION_PROFILE.easing);
+    animatedLayer.dataset.face = animation.face.toLowerCase();
+    elements.cube.append(animatedLayer);
+  }
 
   cubiePositions.forEach((position) => {
-    const cubie = document.createElement("div");
-    cubie.className = "cubie";
-    cubie.style.transform = `translate3d(calc(${position[0]} * var(--gap)), calc(${-position[1]} * var(--gap)), calc(${position[2]} * var(--gap)))`;
-
-    visibleNormals(position).forEach((normal) => {
-      const index = locationToIndex.get(key(position, normal));
-      const sticker = state.stickers[index];
-      const stickerLocation = { position, normal };
-      const face = document.createElement("div");
-      face.className = `sticker ${sticker.toLowerCase()} ${normalClass(normal)}`;
-      if (isLocationAffectedByMove(stickerLocation, highlightedMove)) {
-        face.classList.add("rl-highlight");
-      }
-      face.setAttribute("aria-hidden", "true");
-      cubie.append(face);
-    });
-
+    const cubie = createCubie(position, highlightedMove);
+    if (animation && position[AXIS_INDEX[animation.axis]] === animation.layerSign) {
+      animatedLayer.append(cubie);
+      return;
+    }
     elements.cube.append(cubie);
   });
 }
@@ -1178,16 +1282,25 @@ function renderRlDecisionPanel() {
 }
 
 function stopPlayback() {
-  if (state.playTimer) window.clearInterval(state.playTimer);
+  if (state.playTimer) window.clearTimeout(state.playTimer);
   state.playTimer = null;
   elements.playButton.textContent = t("button.play");
 }
 
 function startPlayback() {
-  if (state.playTimer || !state.solution.length || state.replayIndex >= state.solution.length) return;
+  if (state.playTimer || state.animation || !state.solution.length || state.replayIndex >= state.solution.length) return;
   elements.playButton.textContent = t("button.pause");
-  state.playTimer = window.setInterval(stepForward, 520);
-  stepForward();
+  const playNext = async () => {
+    if (!state.playTimer) return;
+    await stepForward();
+    if (!state.playTimer) return;
+    if (state.replayIndex >= state.solution.length) {
+      stopPlayback();
+      return;
+    }
+    state.playTimer = window.setTimeout(playNext, REPLAY_MOVE_GAP_MS);
+  };
+  state.playTimer = window.setTimeout(playNext, 0);
 }
 
 function updateSolverModeControls() {
@@ -1200,7 +1313,7 @@ function updateUi(message) {
   if (message !== undefined) state.message = message;
   const localValidation = validateCounts(state.stickers);
   const validation = state.validation || localValidation;
-  const isBusy = Boolean(state.pendingAction);
+  const isBusy = Boolean(state.pendingAction || state.animation);
   setBadge(
     elements.backendBadge,
     state.backendOnline ? t("badge.apiOnline") : t("badge.localMode"),
@@ -1300,25 +1413,31 @@ function resetSolution(message) {
   state.message = message;
 }
 
-function stepForward() {
+async function stepForward() {
+  if (state.animation) return;
   if (state.replayIndex >= state.solution.length) {
     stopPlayback();
     updateUi(t("message.replayComplete"));
     return;
   }
   const move = state.solution[state.replayIndex];
-  state.stickers = applyMoveToStickers(state.stickers, move);
-  state.replayIndex += 1;
+  await animateMove(move, () => {
+    state.stickers = applyMoveToStickers(state.stickers, move);
+    state.replayIndex += 1;
+  }, REPLAY_ANIMATION_PROFILE);
   updateUi(t("message.appliedSolutionMove", { index: state.replayIndex, move }));
   if (state.replayIndex >= state.solution.length) stopPlayback();
 }
 
-function stepBack() {
-  if (state.replayIndex <= 0) return;
-  state.replayIndex -= 1;
-  const move = inverseMove(state.solution[state.replayIndex]);
-  state.stickers = applyMoveToStickers(state.stickers, move);
-  updateUi(t("message.rewoundMove", { index: state.replayIndex + 1 }));
+async function stepBack() {
+  if (state.animation || state.replayIndex <= 0) return;
+  const targetIndex = state.replayIndex - 1;
+  const move = inverseMove(state.solution[targetIndex]);
+  await animateMove(move, () => {
+    state.replayIndex = targetIndex;
+    state.stickers = applyMoveToStickers(state.stickers, move);
+  }, REPLAY_ANIMATION_PROFILE);
+  updateUi(t("message.rewoundMove", { index: targetIndex + 1 }));
 }
 
 function buildMoveButtons() {
@@ -1329,14 +1448,15 @@ function buildMoveButtons() {
     button.dataset.move = move;
     button.setAttribute("aria-label", t("move.applyAria", { move }));
     button.addEventListener("click", async () => {
+      if (state.pendingAction || state.animation) return;
       resetSolution(t("message.appliedMove", { move }));
       const payload = await tryBackend("/cube/apply-move", { ...cubePayload(), move });
       if (payload) {
-        applyApiCube(payload);
+        await animateMove(move, () => applyApiCube(payload), DEFAULT_ANIMATION_PROFILE);
         updateUi(t("message.apiAppliedMove", { move }));
         return;
       }
-      applyMoves([move], true);
+      await animateMove(move, () => applyMoves([move], true), DEFAULT_ANIMATION_PROFILE);
       updateUi(t("message.appliedMoveLocal", { move }));
     });
     elements.moveButtons.append(button);
@@ -1527,6 +1647,7 @@ const state = {
   savedSessions: [],
   jsonMode: "state",
   pendingAction: null,
+  animation: null,
 };
 
 const view = {
@@ -1575,10 +1696,25 @@ elements.scrambleButton.addEventListener("click", async () => {
   const payload = await tryBackend("/cube/scramble", { depth, seed });
   let message;
   if (payload) {
+    const moves = parseMoves(payload.history || []);
+    if (moves.length) {
+      await animateMoveSequence(
+        moves,
+        (move) => applyMoves([move], true),
+        SCRAMBLE_ANIMATION_PROFILE,
+        SCRAMBLE_MOVE_GAP_MS
+      );
+    }
     applyApiCube(payload);
     message = t("message.apiGeneratedScramble", { depth });
   } else {
-    applyMoves(generateScramble(depth, seed), true);
+    const moves = generateScramble(depth, seed);
+    await animateMoveSequence(
+      moves,
+      (move) => applyMoves([move], true),
+      SCRAMBLE_ANIMATION_PROFILE,
+      SCRAMBLE_MOVE_GAP_MS
+    );
     message = t("message.generatedScrambleLocal", { depth });
   }
   state.pendingAction = null;
@@ -1737,6 +1873,7 @@ elements.stepForwardButton.addEventListener("click", stepForward);
 elements.stepBackButton.addEventListener("click", stepBack);
 
 elements.applySequenceButton.addEventListener("click", async () => {
+  if (state.pendingAction || state.animation) return;
   try {
     const moves = parseMoves(elements.sequenceInput.value);
     resetSolution(t("message.appliedSequence", { count: moves.length }));
@@ -1745,10 +1882,10 @@ elements.applySequenceButton.addEventListener("click", async () => {
       const payload = await tryBackend("/cube/apply-move", { ...cubePayload(), move });
       if (!payload) {
         appliedByApi = false;
-        applyMoves([move], true);
+        await animateMove(move, () => applyMoves([move], true), DEFAULT_ANIMATION_PROFILE);
         continue;
       }
-      applyApiCube(payload);
+      await animateMove(move, () => applyApiCube(payload), DEFAULT_ANIMATION_PROFILE);
     }
     updateUi(
       appliedByApi

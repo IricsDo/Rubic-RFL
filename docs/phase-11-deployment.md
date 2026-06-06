@@ -1,10 +1,10 @@
 # Phase 11 Deployment
 
-Phase 11 makes the current MVP reproducible in containers. The stack runs the static frontend, FastAPI backend, PostgreSQL, and Redis with named volumes for durable local state. Optional monitoring profiles add Prometheus and Grafana in local and production Compose.
+Phase 11 makes the current MVP reproducible in containers. The stack runs the static frontend, FastAPI backend, PostgreSQL, and Redis with named volumes for durable local state. Optional monitoring profiles add Prometheus and Grafana through the production Compose file.
 
 ## Services
 
-- `frontend`: Nginx-served static UI on `http://127.0.0.1:5173`.
+- `frontend`: Nginx-served static UI on `http://127.0.0.1`.
 - `backend`: FastAPI API on `http://127.0.0.1:8000` with Prometheus-compatible metrics at `/metrics`.
 - `postgres`: local development database initialized from `backend/app/database/migrations/`.
 - `redis`: queue/cache placeholder for future worker orchestration.
@@ -15,23 +15,16 @@ The dedicated worker service is deferred until a real background queue module ex
 
 ## Local Run
 
-Create a local environment file, then start the stack:
+Create the production-style local environment file, then start the active stack:
 
 ```powershell
-Copy-Item .env.example .env
-docker compose up --build
+.\.venv\Scripts\python.exe tools\prepare_production_env.py --generate-secrets --force
+docker compose -f deploy\compose.production.yml --env-file deploy\production.env up -d
 ```
 
-PostgreSQL and Redis stay private to the Compose network by default. If you
-need host access to the container database, add the host-port override:
-
-```powershell
-docker compose -f docker-compose.yml -f docker-compose.host-ports.yml up --build
-```
-
-That override binds PostgreSQL to `127.0.0.1:5433`, while containers still use
-`postgres:5432` internally. This avoids conflicts with a local PostgreSQL
-service already using host port `5432`.
+PostgreSQL and Redis stay private to the Compose network by default. Host-port
+override Compose files were removed so local runs use the same `rubic-rfl-prod`
+project name and do not accidentally start an extra stack.
 
 Verify the backend:
 
@@ -45,12 +38,12 @@ Verify the metrics endpoint:
 Invoke-RestMethod http://127.0.0.1:8000/metrics
 ```
 
-Open `http://127.0.0.1:5173` and keep the UI API base set to `http://127.0.0.1:8000`.
+Open `http://127.0.0.1` and keep the UI API base set to `http://127.0.0.1:8000`.
 
-Run with local monitoring:
+Run with monitoring:
 
 ```powershell
-docker compose --profile monitoring up --build
+docker compose -f deploy\compose.production.yml --env-file deploy\production.env --profile monitoring up -d
 ```
 
 Grafana loads the `Rubic RFL Overview` dashboard automatically from

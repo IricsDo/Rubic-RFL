@@ -10,7 +10,7 @@ This repository implements the first milestone of a real-time Rubik's Cube solve
 - `rl/` for future Rubik's Cube environments, training scripts, checkpoints, evaluation, and experiment configs.
 - `tools/` for local verification utilities such as API performance benchmarks.
 - `.github/workflows/` for CI pipelines.
-- `docker-compose.yml`, `backend/Dockerfile`, and `frontend/Dockerfile` for containerized local deployment.
+- `deploy/compose.production.yml`, `backend/Dockerfile`, and `frontend/Dockerfile` for the active containerized deployment.
 - `docs/` for architecture notes, research findings, and implementation plans.
 
 Keep generated datasets, model checkpoints, and build outputs out of source control unless explicitly documented.
@@ -32,10 +32,9 @@ Run backend tests from the repository root:
 - `.\.venv\Scripts\python.exe tools\load_test_network.py --base-url http://127.0.0.1:8000 --requests 60 --concurrency 6 --warmups 6 --out reports\network-load-smoke.json` records external HTTP load metrics against a running backend, usually Docker/Uvicorn.
 - `.\.venv\Scripts\python.exe tools\prepare_production_env.py --generate-secrets --force` writes ignored `deploy/production.env` with immutable image tags and generated local secrets.
 - `.\.venv\Scripts\python.exe tools\verify_deployment.py --env-file deploy\production.env --strict --require-model-file` validates production env values before a release.
-- `docker compose up --build` starts the containerized frontend, backend, PostgreSQL, and Redis stack.
-- `docker compose -f docker-compose.yml -f docker-compose.host-ports.yml up --build` additionally exposes PostgreSQL on `127.0.0.1:5433` for host-side database inspection.
-- `docker compose --profile monitoring up --build` starts the same stack plus Prometheus and Grafana.
-- `docker compose config` validates the Compose file before CI or deployment edits.
+- `docker compose --env-file deploy\production.env -f deploy\compose.production.yml up -d` starts the active `rubic-rfl-prod` frontend, backend, PostgreSQL, and Redis stack.
+- `docker compose --env-file deploy\production.env -f deploy\compose.production.yml --profile monitoring up -d` starts the same `rubic-rfl-prod` stack plus Prometheus and Grafana.
+- `docker compose --env-file deploy\production.env -f deploy\compose.production.yml config` validates the production Compose file before CI or deployment edits.
 - `Invoke-RestMethod http://127.0.0.1:8000/metrics` inspects Prometheus-compatible backend metrics after the API is running.
 - `python -m http.server 5173 -d frontend` serves the static MVP UI at `http://localhost:5173`.
 - `cd backend; python -m pip install -e ".[dev]"` installs FastAPI backend dependencies when network access is available.
